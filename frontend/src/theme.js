@@ -104,9 +104,11 @@ const theme = createTheme({
         root: {
           '& .MuiOutlinedInput-root': {
             borderRadius: 8,
-            border: '2px solid #1a1a1a',
             backgroundColor: '#ffffff',
             transition: 'all 0.2s ease-in-out',
+            '& .MuiOutlinedInput-notchedOutline': {
+              border: '2px solid #1a1a1a'
+            },
             '&:hover': {
               '& .MuiOutlinedInput-notchedOutline': {
                 borderColor: '#1a237e'

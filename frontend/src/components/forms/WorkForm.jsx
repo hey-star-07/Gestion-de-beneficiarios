@@ -188,14 +188,6 @@ const WorkForm = ({ profile, onUpdate }) => {
                   value={formData.workplace}
                   onChange={handleChange}
                   placeholder="Ej: Cafetería Central"
-                  sx={{ 
-                    '& .MuiInputLabel-root': { mb: 1 },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      border: '2px solid #1a1a1a',
-                      bgcolor: '#ffffff'
-                    }
-                  }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -214,14 +206,6 @@ const WorkForm = ({ profile, onUpdate }) => {
                   value={formData.work_phone}
                   onChange={handleChange}
                   placeholder="Ej: 987654321"
-                  sx={{ 
-                    '& .MuiInputLabel-root': { mb: 1 },
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      border: '2px solid #1a1a1a',
-                      bgcolor: '#ffffff'
-                    }
-                  }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">

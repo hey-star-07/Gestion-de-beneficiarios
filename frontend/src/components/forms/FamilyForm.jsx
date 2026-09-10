@@ -308,14 +308,6 @@ const FamilyForm = ({ profile, onUpdate }) => {
               onChange={(e) => setNewMember({...newMember, full_name: e.target.value})}
               required
               placeholder="Ej: María García Pérez"
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -333,14 +325,6 @@ const FamilyForm = ({ profile, onUpdate }) => {
               value={newMember.phone}
               onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
               placeholder="Ej: 987654321"
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -360,14 +344,6 @@ const FamilyForm = ({ profile, onUpdate }) => {
               onChange={(e) => setNewMember({...newMember, relationship: e.target.value})}
               SelectProps={{ native: true }}
               required
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
             >
               <option value="">Seleccionar relación...</option>
               {RELATIONSHIP_OPTIONS.map(rel => (

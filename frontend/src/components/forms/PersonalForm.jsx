@@ -262,14 +262,6 @@ const PersonalForm = ({ profile, onUpdate }) => {
               value={formData.first_name}
               onChange={handleChange}
               required
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -287,14 +279,6 @@ const PersonalForm = ({ profile, onUpdate }) => {
               value={formData.last_name}
               onChange={handleChange}
               required
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
             />
           </Grid>
           <Grid item xs={12}>
@@ -306,14 +290,6 @@ const PersonalForm = ({ profile, onUpdate }) => {
               onChange={handleChange}
               multiline
               rows={2}
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -331,14 +307,6 @@ const PersonalForm = ({ profile, onUpdate }) => {
               value={formData.map_link}
               onChange={handleChange}
               placeholder="https://maps.google.com/..."
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -355,14 +323,6 @@ const PersonalForm = ({ profile, onUpdate }) => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">

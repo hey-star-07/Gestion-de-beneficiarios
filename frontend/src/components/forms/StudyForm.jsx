@@ -358,14 +358,6 @@ const StudyForm = ({ profile, onUpdate }) => {
               onChange={(e) => setNewEducation({...newEducation, institution: e.target.value})}
               required
               placeholder="Ej: Universidad Nacional"
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -385,14 +377,6 @@ const StudyForm = ({ profile, onUpdate }) => {
               onChange={(e) => setNewEducation({...newEducation, career_name: e.target.value})}
               required
               placeholder="Ej: Ingeniería Civil"
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
             />
           </Grid>
           
@@ -405,14 +389,6 @@ const StudyForm = ({ profile, onUpdate }) => {
               onChange={(e) => setNewEducation({...newEducation, year_semester: e.target.value})}
               placeholder="Ej: 2do Año - 4to Semestre"
               helperText="Puedes escribir libremente, por ejemplo: 1er Año, 3er Semestre, etc."
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
             />
           </Grid>
           
@@ -424,14 +400,6 @@ const StudyForm = ({ profile, onUpdate }) => {
               value={newEducation.institution_address}
               onChange={(e) => setNewEducation({...newEducation, institution_address: e.target.value})}
               placeholder="Ej: Av. Principal 123"
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -450,14 +418,6 @@ const StudyForm = ({ profile, onUpdate }) => {
               value={newEducation.institution_map_link}
               onChange={(e) => setNewEducation({...newEducation, institution_map_link: e.target.value})}
               placeholder="https://maps.google.com/..."
-              sx={{ 
-                '& .MuiInputLabel-root': { mb: 1 },
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                  border: '2px solid #1a1a1a',
-                  bgcolor: '#ffffff'
-                }
-              }}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
