@@ -1,0 +1,116 @@
+# ============================================
+# DEPENDENCIAS
+# ============================================
+node_modules/
+jspm_packages/
+bower_components/
+.pnp
+.pnp.js
+
+# ============================================
+# VARIABLES DE ENTORNO Y SECRETOS
+# ============================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+*.env.local
+*.env.production
+secrets/
+*.pem
+*.key
+
+# ============================================
+# ARCHIVOS SUBIDOS POR USUARIOS
+# ============================================
+uploads/*
+!uploads/.gitkeep
+!uploads/croquis/.gitkeep
+!uploads/schedules/.gitkeep
+!uploads/maps/.gitkeep
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# ============================================
+# LOGS
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+backend/logs/
+backend/*.log
+
+# ============================================
+# BUILDS Y DIST
+# ============================================
+dist/
+build/
+frontend/dist/
+frontend/build/
+.cache/
+.parcel-cache/
+.vite/
+
+# ============================================
+# SISTEMAS OPERATIVOS
+# ============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ============================================
+# EDITORES DE CÓDIGO
+# ============================================
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# ============================================
+# TESTING Y COBERTURA
+# ============================================
+coverage/
+.nyc_output/
+*.lcov
+
+# ============================================
+# TEMPORALES
+# ============================================
+tmp/
+temp/
+*.tmp
+*.temp
+.cache/
+
+# ============================================
+# BASE DE DATOS
+# ============================================
+*.sqlite
+*.sqlite3
+*.db
+database/backups/
+database/dumps/
+
+# ============================================
+# OTROS
+# ============================================
+.eslintcache
+.stylelintcache
+*.tgz
+*.zip
