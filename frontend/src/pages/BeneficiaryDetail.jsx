@@ -37,7 +37,7 @@ import {
   Visibility
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
-
+ 
 const BeneficiaryDetail = () => {
   const { code } = useParams()
   const navigate = useNavigate()
@@ -45,6 +45,7 @@ const BeneficiaryDetail = () => {
   const [loading, setLoading] = useState(true)
   const [tabValue, setTabValue] = useState(0)
   const [error, setError] = useState(null)
+  const [statusLoading, setStatusLoading] = useState(false)
 
   const UPLOADS_URL = 'http://localhost:3000'
 
@@ -105,6 +106,7 @@ const BeneficiaryDetail = () => {
       const finalData = {
         ...beneficiaryData,
         ...completeData,
+        is_active: beneficiaryData.is_active !== false,
         educationProfiles: completeData?.educationProfiles || [],
         familyMembers: completeData?.familyMembers || []
       }
@@ -136,6 +138,35 @@ const BeneficiaryDetail = () => {
       month: 'long',
       day: 'numeric'
     })
+  }
+
+  const handleToggleStatus = async () => {
+    if (!beneficiary) return
+    
+    const newStatus = beneficiary.is_active === false ? true : false
+    const action = newStatus ? 'habilitar' : 'deshabilitar'
+    
+    if (!window.confirm(`¿Estás seguro de ${action} a ${beneficiary.first_name} ${beneficiary.last_name}?`)) {
+      return
+    }
+    
+    setStatusLoading(true)
+    try {
+      const response = await beneficiaryService.toggleBeneficiaryStatus(
+        beneficiary.id, 
+        newStatus
+      )
+      
+      if (response.success) {
+        setBeneficiary(prev => ({ ...prev, is_active: newStatus }))
+        toast.success(`Beneficiario ${newStatus ? 'habilitado' : 'deshabilitado'} exitosamente`)
+      }
+    } catch (error) {
+      console.error('❌ Error:', error)
+      toast.error(error.response?.data?.error || 'Error al cambiar estado')
+    } finally {
+      setStatusLoading(false)
+    }
   }
 
   const InfoItem = ({ icon, label, value }) => (
@@ -294,7 +325,47 @@ const BeneficiaryDetail = () => {
                       fontFamily: 'Playfair Display'
                     }}
                   />
+                  
+                  {/* Chip de estado */}
+                  <Chip
+                    icon={beneficiary.is_active !== false ? <CheckCircle sx={{ fontSize: 16 }} /> : <Cancel sx={{ fontSize: 16 }} />}
+                    label={beneficiary.is_active !== false ? 'ACTIVO' : 'DESHABILITADO'}
+                    sx={{
+                      bgcolor: beneficiary.is_active !== false ? '#00c853' : '#ff1744',
+                      color: 'white',
+                      fontWeight: 700,
+                      fontFamily: 'Playfair Display',
+                      border: '2px solid #1a1a1a',
+                      '& .MuiChip-icon': {
+                        color: 'white'
+                      }
+                    }}
+                  />
                 </Box>
+                <Typography variant="body1" color="text.secondary">
+                  Beneficiario desde {formatDate(beneficiary.created_at)}
+                </Typography>
+              </Grid>
+              
+              {/* Botón de habilitar/deshabilitar */}
+              <Grid item>
+                <Button
+                  variant="contained"
+                  startIcon={beneficiary.is_active !== false ? <Cancel /> : <CheckCircle />}
+                  onClick={handleToggleStatus}
+                  sx={{
+                    bgcolor: beneficiary.is_active !== false ? '#ff1744' : '#00c853',
+                    border: '2px solid #1a1a1a',
+                    boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
+                    '&:hover': {
+                      bgcolor: beneficiary.is_active !== false ? '#d50000' : '#00a844',
+                      transform: 'translate(1px, 1px)',
+                      boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
+                    }
+                  }}
+                >
+                  {beneficiary.is_active !== false ? 'Deshabilitar' : 'Habilitar'}
+                </Button>
               </Grid>
             </Grid>
           </Paper>

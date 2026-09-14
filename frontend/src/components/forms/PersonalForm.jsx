@@ -8,7 +8,8 @@ import {
   Paper,
   Typography,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  Alert
 } from '@mui/material'
 import {
   Save,
@@ -19,12 +20,15 @@ import {
   Map,
   FileUpload,
   Visibility,
-  Description
+  Description,
+  Lock
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { beneficiaryService } from '../../services/beneficiary.service'
+import { useDeadline } from '../../context/DeadlineContext'
 
 const PersonalForm = ({ profile, onUpdate }) => {
+  const { canEdit } = useDeadline()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     first_name: profile?.first_name || '',
@@ -60,11 +64,15 @@ const PersonalForm = ({ profile, onUpdate }) => {
   }
 
   const handleFileChange = async (e) => {
+    if (!canEdit) {
+      toast.error('El plazo para modificar datos ha expirado')
+      return
+    }
+    
     const file = e.target.files[0]
     if (file) {
       setUploadedFile(file)
       
-      // Crear preview
       if (file.type.startsWith('image/')) {
         const reader = new FileReader()
         reader.onloadend = () => {
@@ -75,40 +83,36 @@ const PersonalForm = ({ profile, onUpdate }) => {
         setFilePreview('pdf')
       }
       
-      // Subir archivo inmediatamente
       try {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('fieldname', 'croquis_file')
         
-        console.log('📤 Subiendo archivo:', file.name)
-        
         const response = await beneficiaryService.uploadFile(formData)
-        console.log('✅ Archivo subido:', response)
-        
         toast.success('Croquis subido exitosamente')
         
-        // Recargar perfil para mostrar el archivo subido
         if (onUpdate) {
           await onUpdate()
         }
       } catch (error) {
         console.error('❌ Error al subir archivo:', error)
-        toast.error('Error al subir el archivo')
+        toast.error(error.response?.data?.error || 'Error al subir el archivo')
       }
     }
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!canEdit) {
+      toast.error('El plazo para modificar datos ha expirado')
+      return
+    }
+    
     setLoading(true)
 
     try {
-      console.log('📤 Enviando datos:', formData)
-      
-      const response = await beneficiaryService.updateMyProfile(formData)
-      console.log('✅ Respuesta del servidor:', response)
-      
+      await beneficiaryService.updateMyProfile(formData)
       toast.success('¡Datos guardados exitosamente! 🎉')
       setIsEditing(false)
       
@@ -186,7 +190,6 @@ const PersonalForm = ({ profile, onUpdate }) => {
             </Box>
           )}
 
-          {/* Botón Ver Croquis */}
           {profile?.croquis_file && (
             <Box sx={{ mt: 3 }}>
               <Button
@@ -210,23 +213,43 @@ const PersonalForm = ({ profile, onUpdate }) => {
           )}
         </Box>
 
+        {!canEdit && (
+          <Alert 
+            severity="warning" 
+            icon={<Lock />}
+            sx={{ 
+              mt: 3,
+              border: '2px solid #1a1a1a',
+              borderRadius: 2
+            }}
+          >
+            El plazo para modificar datos ha expirado
+          </Alert>
+        )}
+
         <Button
           variant="contained"
-          startIcon={<Edit />}
+          startIcon={canEdit ? <Edit /> : <Lock />}
           onClick={() => setIsEditing(true)}
+          disabled={!canEdit}
           sx={{ 
             mt: 3,
-            bgcolor: '#1a237e',
+            bgcolor: canEdit ? '#1a237e' : '#9e9e9e',
             border: '2px solid #1a1a1a',
             boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
             '&:hover': {
-              bgcolor: '#0d1442',
-              transform: 'translate(1px, 1px)',
-              boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
+              bgcolor: canEdit ? '#0d1442' : '#9e9e9e',
+              transform: canEdit ? 'translate(1px, 1px)' : 'none',
+              boxShadow: canEdit ? '2px 2px 0px rgba(26,26,26,0.2)' : '3px 3px 0px rgba(26,26,26,0.2)'
+            },
+            '&.Mui-disabled': {
+              bgcolor: '#bdbdbd',
+              color: '#757575',
+              border: '2px solid #757575'
             }
           }}
         >
-          Actualizar Datos
+          {canEdit ? 'Actualizar Datos' : 'Plazo Expirado'}
         </Button>
       </Paper>
     )
@@ -337,6 +360,7 @@ const PersonalForm = ({ profile, onUpdate }) => {
               variant="outlined"
               component="label"
               startIcon={<FileUpload />}
+              disabled={!canEdit}
               sx={{ 
                 mr: 2,
                 border: '2px solid #1a1a1a',
@@ -353,10 +377,10 @@ const PersonalForm = ({ profile, onUpdate }) => {
                 hidden
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={handleFileChange}
+                disabled={!canEdit}
               />
             </Button>
             
-            {/* Vista previa del archivo */}
             {filePreview && filePreview !== 'pdf' && (
               <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
                 <img 
@@ -422,7 +446,7 @@ const PersonalForm = ({ profile, onUpdate }) => {
             type="submit"
             variant="contained"
             startIcon={<Save />}
-            disabled={loading}
+            disabled={loading || !canEdit}
             sx={{ 
               flex: 1,
               minWidth: 200,

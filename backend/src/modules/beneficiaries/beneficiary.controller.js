@@ -393,6 +393,256 @@ class BeneficiaryController {
       });
     }
   }
+
+    // ============================================
+  // MÉTODOS PARA EDUCACIÓN
+  // ============================================
+  async updateEducation(req, res) {
+    try {
+      const { educationId } = req.params;
+      const data = req.body;
+      
+      console.log('📥 Actualizando educación ID:', educationId);
+      console.log('📤 Datos:', data);
+      
+      const db = require('../../config/database');
+      
+      const result = await db.query(
+        `UPDATE education_profiles SET
+          career_name = COALESCE($1, career_name),
+          institution = COALESCE($2, institution),
+          year_semester = COALESCE($3, year_semester),
+          institution_address = COALESCE($4, institution_address),
+          institution_map_link = COALESCE($5, institution_map_link),
+          updated_at = CURRENT_TIMESTAMP
+        WHERE id = $6
+        RETURNING *`,
+        [
+          data.career_name,
+          data.institution,
+          data.year_semester,
+          data.institution_address,
+          data.institution_map_link,
+          educationId
+        ]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Estudio no encontrado'
+        });
+      }
+      
+      console.log('✅ Educación actualizada:', result.rows[0]);
+      
+      res.json({
+        success: true,
+        message: 'Estudio actualizado exitosamente',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('❌ Error al actualizar educación:', error);
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  async deleteEducation(req, res) {
+    try {
+      const { educationId } = req.params;
+      
+      console.log('🗑️ Eliminando educación ID:', educationId);
+      
+      const db = require('../../config/database');
+      
+      const result = await db.query(
+        'DELETE FROM education_profiles WHERE id = $1 RETURNING id',
+        [educationId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Estudio no encontrado'
+        });
+      }
+      
+      console.log('✅ Educación eliminada');
+      
+      res.json({
+        success: true,
+        message: 'Estudio eliminado exitosamente'
+      });
+    } catch (error) {
+      console.error('❌ Error al eliminar educación:', error);
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  // ============================================
+  // MÉTODOS PARA FAMILIA
+  // ============================================
+  async updateFamilyMember(req, res) {
+    try {
+      const { familyId } = req.params;
+      const data = req.body;
+      
+      console.log('📥 Actualizando familiar ID:', familyId);
+      console.log('📤 Datos:', data);
+      
+      const db = require('../../config/database');
+      
+      const result = await db.query(
+        `UPDATE family_members SET
+          full_name = COALESCE($1, full_name),
+          phone = COALESCE($2, phone),
+          relationship = COALESCE($3, relationship)
+        WHERE id = $4
+        RETURNING *`,
+        [
+          data.full_name,
+          data.phone,
+          data.relationship,
+          familyId
+        ]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Familiar no encontrado'
+        });
+      }
+      
+      console.log('✅ Familiar actualizado:', result.rows[0]);
+      
+      res.json({
+        success: true,
+        message: 'Familiar actualizado exitosamente',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('❌ Error al actualizar familiar:', error);
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  async deleteFamilyMember(req, res) {
+    try {
+      const { familyId } = req.params;
+      
+      console.log('🗑️ Eliminando familiar ID:', familyId);
+      
+      const db = require('../../config/database');
+      
+      const result = await db.query(
+        'DELETE FROM family_members WHERE id = $1 RETURNING id',
+        [familyId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Familiar no encontrado'
+        });
+      }
+      
+      console.log('✅ Familiar eliminado');
+      
+      res.json({
+        success: true,
+        message: 'Familiar eliminado exitosamente'
+      });
+    } catch (error) {
+      console.error('❌ Error al eliminar familiar:', error);
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  async toggleBeneficiaryStatus(req, res) {
+    try {
+      const { id } = req.params;
+      const { is_active } = req.body;
+      
+      console.log('🔄 Cambiando estado de beneficiario:', id, 'a', is_active);
+      
+      const db = require('../../config/database');
+      
+      // Actualizar en la tabla users
+      const result = await db.query(
+        `UPDATE users 
+        SET is_active = $1, updated_at = CURRENT_TIMESTAMP 
+        WHERE beneficiary_id = $2
+        RETURNING id, email, username, is_active`,
+        [is_active, id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Usuario asociado al beneficiario no encontrado'
+        });
+      }
+      
+      console.log('✅ Estado actualizado:', result.rows[0]);
+      
+      res.json({
+        success: true,
+        message: is_active ? 'Beneficiario habilitado exitosamente' : 'Beneficiario deshabilitado exitosamente',
+        data: result.rows[0]
+      });
+    } catch (error) {
+      console.error('❌ Error al cambiar estado:', error);
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
+  async getBeneficiaryStatus(req, res) {
+    try {
+      const { id } = req.params;
+      
+      const db = require('../../config/database');
+      
+      const result = await db.query(
+        `SELECT u.id, u.email, u.username, u.is_active 
+        FROM users u
+        WHERE u.beneficiary_id = $1`,
+        [id]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'Usuario no encontrado'
+        });
+      }
+      
+      res.json({
+        success: true,
+        data: result.rows[0]
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
 }
 
 module.exports = new BeneficiaryController();

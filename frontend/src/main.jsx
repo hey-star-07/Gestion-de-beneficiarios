@@ -4,12 +4,12 @@ import App from './App.jsx'
 import './index.css'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { DeadlineProvider } from './context/DeadlineContext'
 import { ThemeProvider } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
 import { Toaster } from 'react-hot-toast'
 import theme from './theme'
 
-// Configuración personalizada para toast
 const toastOptions = {
   duration: 3000,
   style: {
@@ -50,11 +50,13 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <App />
-          <Toaster 
-            position="top-right"
-            toastOptions={toastOptions}
-          />
+          <DeadlineProvider>
+            <App />
+            <Toaster 
+              position="top-right"
+              toastOptions={toastOptions}
+            />
+          </DeadlineProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

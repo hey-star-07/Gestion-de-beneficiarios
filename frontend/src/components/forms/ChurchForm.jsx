@@ -11,7 +11,9 @@ import {
   FormLabel,
   RadioGroup,
   FormControlLabel,
-  Radio
+  Radio,
+  InputAdornment,
+  Alert
 } from '@mui/material'
 import {
   Save,
@@ -20,11 +22,14 @@ import {
   Person,
   Phone,
   CheckCircle,
-  Cancel
+  Cancel,
+  Lock
 } from '@mui/icons-material'
 import { beneficiaryService } from '../../services/beneficiary.service'
+import { useDeadline } from '../../context/DeadlineContext'
 
 const ChurchForm = ({ profile, onUpdate }) => {
+  const { canEdit } = useDeadline()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     church_attendance: profile?.church_attendance || false,
@@ -44,15 +49,30 @@ const ChurchForm = ({ profile, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!canEdit) {
+      toast.error('El plazo para modificar datos ha expirado')
+      return
+    }
+    
     setLoading(true)
 
     try {
-      await beneficiaryService.updateMyProfile(formData)
+      const dataToSend = {
+        church_attendance: formData.church_attendance,
+        is_baptized: formData.is_baptized,
+        church_name: formData.church_attendance ? formData.church_name : null,
+        pastor_name: formData.church_attendance ? formData.pastor_name : null,
+        pastor_phone: formData.church_attendance ? formData.pastor_phone : null
+      }
+      
+      await beneficiaryService.updateMyProfile(dataToSend)
       toast.success('¡Información de iglesia guardada! ⛪')
       setIsEditing(false)
       if (onUpdate) onUpdate()
     } catch (error) {
-      toast.error('Error al guardar la información')
+      console.error('❌ Error:', error)
+      toast.error(error.response?.data?.error || 'Error al guardar la información')
     } finally {
       setLoading(false)
     }
@@ -60,8 +80,21 @@ const ChurchForm = ({ profile, onUpdate }) => {
 
   if (!isEditing) {
     return (
-      <Paper sx={{ p: 4, maxWidth: 600 }}>
-        <Typography variant="h5" gutterBottom sx={{ color: '#1a237e', fontWeight: 700 }}>
+      <Paper sx={{ 
+        p: { xs: 2, sm: 3, md: 4 }, 
+        maxWidth: 700,
+        mx: 'auto',
+        border: '3px solid #1a1a1a',
+        borderRadius: 4,
+        boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
+        bgcolor: '#fffdf9'
+      }}>
+        <Typography variant="h5" gutterBottom sx={{ 
+          color: '#1a237e', 
+          fontWeight: 700,
+          fontFamily: 'Playfair Display',
+          mb: 3
+        }}>
           <Church sx={{ mr: 1, verticalAlign: 'middle' }} />
           Información de la Iglesia
         </Typography>
@@ -77,16 +110,17 @@ const ChurchForm = ({ profile, onUpdate }) => {
               <Cancel sx={{ color: '#ff1744' }} />
             )}
           </Box>
+          
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-              <Typography variant="body1" sx={{ mr: 1 }}>
-                <strong>Está bautizado:</strong>
-              </Typography>
-              {profile?.is_baptized ? (
-                <CheckCircle sx={{ color: '#00c853' }} />
-              ) : (
-                <Cancel sx={{ color: '#ff1744' }} />
-              )}
-            </Box>
+            <Typography variant="body1" sx={{ mr: 1 }}>
+              <strong>Está bautizado:</strong>
+            </Typography>
+            {profile?.is_baptized ? (
+              <CheckCircle sx={{ color: '#00c853' }} />
+            ) : (
+              <Cancel sx={{ color: '#ff1744' }} />
+            )}
+          </Box>
 
           {profile?.church_name && (
             <Typography variant="body1" sx={{ mb: 2 }}>
@@ -105,27 +139,63 @@ const ChurchForm = ({ profile, onUpdate }) => {
           )}
         </Box>
 
+        {!canEdit && (
+          <Alert 
+            severity="warning" 
+            icon={<Lock />}
+            sx={{ 
+              mt: 3,
+              border: '2px solid #1a1a1a',
+              borderRadius: 2
+            }}
+          >
+            El plazo para modificar datos ha expirado
+          </Alert>
+        )}
+
         <Button
           variant="contained"
-          startIcon={<Edit />}
+          startIcon={canEdit ? <Edit /> : <Lock />}
           onClick={() => setIsEditing(true)}
-          sx={{ mt: 3 }}
+          disabled={!canEdit}
+          sx={{ 
+            mt: 3,
+            bgcolor: canEdit ? '#1a237e' : '#9e9e9e',
+            border: '2px solid #1a1a1a',
+            boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
+            '&:hover': {
+              bgcolor: canEdit ? '#0d1442' : '#9e9e9e'
+            }
+          }}
         >
-          Actualizar Datos
+          {canEdit ? 'Actualizar Datos' : 'Plazo Expirado'}
         </Button>
       </Paper>
     )
   }
 
   return (
-    <Paper sx={{ p: 4, maxWidth: 600 }}>
-      <Typography variant="h5" gutterBottom sx={{ color: '#1a237e', fontWeight: 700 }}>
+    <Paper sx={{ 
+      p: { xs: 2, sm: 3, md: 4 }, 
+      maxWidth: 700,
+      mx: 'auto',
+      border: '3px solid #1a1a1a',
+      borderRadius: 4,
+      boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
+      bgcolor: '#fffdf9'
+    }}>
+      <Typography variant="h5" gutterBottom sx={{ 
+        color: '#1a237e', 
+        fontWeight: 700,
+        fontFamily: 'Playfair Display',
+        mb: 3
+      }}>
         <Church sx={{ mr: 1, verticalAlign: 'middle' }} />
         Actualizar Información de la Iglesia
       </Typography>
       
       <form onSubmit={handleSubmit}>
-        <Grid container spacing={3} sx={{ mt: 2 }}>
+        <Grid container spacing={3}>
           <Grid item xs={12}>
             <FormControl component="fieldset">
               <FormLabel component="legend">¿Asiste a la iglesia la familia?</FormLabel>
@@ -133,6 +203,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
                 name="church_attendance"
                 value={formData.church_attendance}
                 onChange={(e) => setFormData({...formData, church_attendance: e.target.value === 'true'})}
+                row
               >
                 <FormControlLabel value={true} control={<Radio />} label="Sí" />
                 <FormControlLabel value={false} control={<Radio />} label="No" />
@@ -147,6 +218,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
                 name="is_baptized"
                 value={formData.is_baptized}
                 onChange={(e) => setFormData({...formData, is_baptized: e.target.value === 'true'})}
+                row
               >
                 <FormControlLabel value={true} control={<Radio />} label="Sí" />
                 <FormControlLabel value={false} control={<Radio />} label="No" />
@@ -154,59 +226,76 @@ const ChurchForm = ({ profile, onUpdate }) => {
             </FormControl>
           </Grid>
           
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Nombre de la iglesia"
-              name="church_name"
-              value={formData.church_name}
-              onChange={handleChange}
-              InputProps={{
-                startAdornment: <Church sx={{ mr: 1, color: '#1a237e' }} />
-              }}
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Nombre del pastor"
-              name="pastor_name"
-              value={formData.pastor_name}
-              onChange={handleChange}
-              InputProps={{
-                startAdornment: <Person sx={{ mr: 1, color: '#1a237e' }} />
-              }}
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Número de contacto del pastor"
-              name="pastor_phone"
-              value={formData.pastor_phone}
-              onChange={handleChange}
-              InputProps={{
-                startAdornment: <Phone sx={{ mr: 1, color: '#1a237e' }} />
-              }}
-            />
-          </Grid>
+          {formData.church_attendance && (
+            <>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Nombre de la iglesia"
+                  name="church_name"
+                  value={formData.church_name}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: <Church sx={{ mr: 1, color: '#1a237e' }} />
+                  }}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Nombre del pastor"
+                  name="pastor_name"
+                  value={formData.pastor_name}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: <Person sx={{ mr: 1, color: '#1a237e' }} />
+                  }}
+                />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label="Número de contacto del pastor"
+                  name="pastor_phone"
+                  value={formData.pastor_phone}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: <Phone sx={{ mr: 1, color: '#1a237e' }} />
+                  }}
+                />
+              </Grid>
+            </>
+          )}
         </Grid>
 
-        <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+        <Box sx={{ mt: 4, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
           <Button
             type="submit"
             variant="contained"
             startIcon={<Save />}
-            disabled={loading}
-            sx={{ flex: 1 }}
+            disabled={loading || !canEdit}
+            sx={{ 
+              flex: 1,
+              minWidth: 200,
+              bgcolor: '#1a237e',
+              border: '2px solid #1a1a1a',
+              boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
+              '&:hover': {
+                bgcolor: '#0d1442'
+              }
+            }}
           >
             {loading ? 'Guardando...' : 'Guardar Datos'}
           </Button>
           <Button
             variant="outlined"
             onClick={() => setIsEditing(false)}
+            sx={{
+              border: '2px solid #1a1a1a',
+              boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
+            }}
           >
             Cancelar
           </Button>

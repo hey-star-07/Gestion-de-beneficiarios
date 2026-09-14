@@ -13,12 +13,15 @@ import {
   Avatar,
   TextField,
   InputAdornment,
-  CircularProgress
+  CircularProgress,
+  IconButton,
+  Tooltip
 } from '@mui/material'
 import {
   Logout,
   Search,
-  Home
+  Home,
+  Settings
 } from '@mui/icons-material'
 import FolderGrid from '../components/folders/FolderGrid'
 
@@ -50,9 +53,7 @@ const Dashboard = () => {
       console.log('Cargando beneficiarios...')
       const response = await beneficiaryService.getAll()
       console.log('Respuesta completa:', response)
-      console.log('Respuesta data:', response.data)
       
-      // Manejar diferentes formatos de respuesta
       let beneficiariesList = []
       
       if (Array.isArray(response.data)) {
@@ -98,6 +99,10 @@ const Dashboard = () => {
     navigate('/login')
   }
 
+  const handleSettings = () => {
+    navigate('/admin/settings')
+  }
+
   console.log('Estado actual:', { 
     loading, 
     beneficiariesCount: beneficiaries.length,
@@ -134,6 +139,24 @@ const Dashboard = () => {
           >
             Gestión de Beneficiarios
           </Typography>
+          
+          {/* Botón de Configuración (solo admin) */}
+          {user?.role === 'ADMIN' && (
+            <Tooltip title="Configuración">
+              <IconButton
+                color="inherit"
+                onClick={handleSettings}
+                sx={{ 
+                  mr: 2,
+                  '&:hover': {
+                    bgcolor: 'rgba(255,255,255,0.1)'
+                  }
+                }}
+              >
+                <Settings />
+              </IconButton>
+            </Tooltip>
+          )}
           
           <Avatar
             sx={{

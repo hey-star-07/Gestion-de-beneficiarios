@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import Profile from './pages/Profile'
 import BeneficiaryDetail from './pages/BeneficiaryDetail'
 import ResetPassword from './pages/ResetPassword'
+import AdminSettings from './pages/AdminSettings'
 
 function App() {
   const { user, loading } = useAuth()
@@ -57,6 +58,12 @@ function App() {
       
       {/* Ruta por defecto */}
       <Route path="*" element={<Navigate to="/" replace />} />
+
+      {/* Ruta de configuración del sistema (solo para ADMIN) */}
+      <Route 
+        path="/admin/settings" 
+        element={user && user.role === 'ADMIN' ? <AdminSettings /> : <Navigate to="/" replace />} 
+      />
     </Routes>
   )
 }

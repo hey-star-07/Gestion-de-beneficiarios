@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext'
 import { beneficiaryService } from '../services/beneficiary.service'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-hot-toast'
+import DeadlineBanner from '../components/common/DeadlineBanner'
+import { useDeadline } from '../context/DeadlineContext'
 import {
   Box,
   Paper,
@@ -53,13 +55,14 @@ const Profile = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
 
+  const { canEdit } = useDeadline()
+
   const loadProfile = useCallback(async () => {
     try {
       setLoading(true)
       const response = await beneficiaryService.getMyProfile()
       console.log('📋 Perfil cargado:', response)
       
-      // Manejar diferentes formatos de respuesta
       if (response?.data) {
         setProfile(response.data)
       } else if (response?.beneficiary) {
@@ -306,7 +309,12 @@ const Profile = () => {
               </Typography>
             </Box>
           ) : (
-            renderSection()
+            <>
+              {/* 👇 BANNER DE FECHA LÍMITE */}
+              <DeadlineBanner />
+              
+              {renderSection()}
+            </>
           )}
         </motion.div>
       </Box>

@@ -1,7 +1,6 @@
 import axios from 'axios'
 
-// Usar la URL directa del backend
-const API_URL = 'http://localhost:3000/api'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
 
 const api = axios.create({
   baseURL: API_URL,
@@ -21,23 +20,38 @@ api.interceptors.request.use(
     }
     return config
   },
-  (error) => {
-    return Promise.reject(error)
-  }
+  (error) => Promise.reject(error)
 )
+
+// Variable para evitar múltiples redirecciones
+let isRedirecting = false
 
 // Interceptor para manejar respuestas
 api.interceptors.response.use(
-  (response) => {
-    return response
-  },
+  (response) => response,
   (error) => {
-    if (error.response?.status === 401 && !error.config?.url?.includes('/login')) {
+    // NO redirigir si es una petición a /settings/deadline
+    // o si ya estamos en login
+    const isDeadlineRequest = error.config?.url?.includes('/settings/deadline')
+    const isLoginRequest = error.config?.url?.includes('/auth/login')
+    const isOnLoginPage = window.location.pathname === '/login'
+    
+    if (error.response?.status === 401 && !isDeadlineRequest && !isLoginRequest && !isOnLoginPage && !isRedirecting) {
+      isRedirecting = true
+      
       localStorage.removeItem('token')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
+      
+      // Redirigir solo si no estamos ya en login
       window.location.href = '/login'
+      
+      // Resetear flag después de un tiempo
+      setTimeout(() => {
+        isRedirecting = false
+      }, 2000)
     }
+    
     return Promise.reject(error)
   }
 )

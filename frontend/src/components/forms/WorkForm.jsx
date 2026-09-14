@@ -12,7 +12,8 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  InputAdornment
+  InputAdornment,
+  Alert
 } from '@mui/material'
 import {
   Save,
@@ -21,11 +22,14 @@ import {
   Phone,
   Business,
   CheckCircle,
-  Cancel
+  Cancel,
+  Lock
 } from '@mui/icons-material'
 import { beneficiaryService } from '../../services/beneficiary.service'
+import { useDeadline } from '../../context/DeadlineContext'
 
 const WorkForm = ({ profile, onUpdate }) => {
+  const { canEdit } = useDeadline()
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     is_working: profile?.is_working || false,
@@ -44,17 +48,20 @@ const WorkForm = ({ profile, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    if (!canEdit) {
+      toast.error('El plazo para modificar datos ha expirado')
+      return
+    }
+    
     setLoading(true)
 
     try {
-      // IMPORTANTE: Si is_working es false, enviar null para limpiar los campos
       const dataToSend = {
         is_working: formData.is_working,
         workplace: formData.is_working ? formData.workplace : null,
         work_phone: formData.is_working ? formData.work_phone : null
       }
-      
-      console.log('📤 Enviando datos de trabajo:', dataToSend)
       
       await beneficiaryService.updateMyProfile(dataToSend)
       toast.success('¡Información laboral guardada! 💼')
@@ -119,21 +126,36 @@ const WorkForm = ({ profile, onUpdate }) => {
           )}
         </Box>
 
+        {!canEdit && (
+          <Alert 
+            severity="warning" 
+            icon={<Lock />}
+            sx={{ 
+              mt: 3,
+              border: '2px solid #1a1a1a',
+              borderRadius: 2
+            }}
+          >
+            El plazo para modificar datos ha expirado
+          </Alert>
+        )}
+
         <Button
           variant="contained"
-          startIcon={<Edit />}
+          startIcon={canEdit ? <Edit /> : <Lock />}
           onClick={() => setIsEditing(true)}
+          disabled={!canEdit}
           sx={{ 
             mt: 3,
-            bgcolor: '#1a237e',
+            bgcolor: canEdit ? '#1a237e' : '#9e9e9e',
             border: '2px solid #1a1a1a',
             boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
             '&:hover': {
-              bgcolor: '#0d1442'
+              bgcolor: canEdit ? '#0d1442' : '#9e9e9e'
             }
           }}
         >
-          Actualizar Datos
+          {canEdit ? 'Actualizar Datos' : 'Plazo Expirado'}
         </Button>
       </Paper>
     )
@@ -224,7 +246,7 @@ const WorkForm = ({ profile, onUpdate }) => {
             type="submit"
             variant="contained"
             startIcon={<Save />}
-            disabled={loading}
+            disabled={loading || !canEdit}
             sx={{ 
               flex: 1,
               minWidth: 200,

@@ -13,6 +13,8 @@ const authRoutes = require('./modules/auth/auth.routes');
 const userRoutes = require('./modules/users/user.routes');
 const beneficiaryRoutes = require('./modules/beneficiaries/beneficiary.routes');
 
+const settingRoutes = require('./modules/settings/setting.routes');
+
 // Importar middlewares
 const { errorHandler } = require('./utils/errors');
 const logger = require('./utils/logger');
@@ -52,6 +54,7 @@ console.log('📁 Sirviendo archivos desde:', UPLOAD_ROOT);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/beneficiaries', beneficiaryRoutes);
+app.use('/api/settings', settingRoutes);
 
 // Ruta de health check
 app.get('/health', (req, res) => {
