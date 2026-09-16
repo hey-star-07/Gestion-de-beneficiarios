@@ -1,5 +1,5 @@
 import React from 'react'
-import { Grid } from '@mui/material'
+import { Box } from '@mui/material'
 import FolderCard from './FolderCard'
 
 const FolderGrid = ({ beneficiaries }) => {
@@ -21,14 +21,29 @@ const FolderGrid = ({ beneficiaries }) => {
     )
   }
 
+  // Se usa CSS Grid en vez de <Grid> de MUI porque su sistema de 12
+  // columnas no permite 7 columnas exactas (12 no es divisible entre 7).
   return (
-    <Grid container spacing={4} justifyContent="center">
+    <Box
+      sx={{
+        display: 'grid',
+        gap: { xs: 2, md: 2.5 },
+        gridTemplateColumns: {
+          xs: 'repeat(2, 1fr)',
+          sm: 'repeat(3, 1fr)',
+          md: 'repeat(5, 1fr)',
+          lg: 'repeat(6, 1fr)',
+          xl: 'repeat(7, 1fr)'
+        }
+      }}
+    >
       {beneficiariesList.map((beneficiary, index) => (
-        <Grid item xs={12} sm={6} md={4} lg={3} key={beneficiary?.id || index}>
-          <FolderCard beneficiary={beneficiary} />
-        </Grid>
+        <FolderCard 
+          beneficiary={beneficiary} 
+          key={beneficiary?.id || index} 
+        />
       ))}
-    </Grid>
+    </Box>
   )
 }
 

@@ -120,9 +120,10 @@ class AuthService {
       throw new Error('Email no verificado. Por favor revisa tu correo para verificar tu cuenta');
     }
     
-    if (!user.is_active) {
-      throw new Error('Usuario desactivado. Contacta al administrador');
-    }
+    // NOTA: ya no bloqueamos el login si is_active es false.
+    // Un beneficiario deshabilitado por el admin debe poder entrar y ver
+    // sus datos; solo se le bloquean las acciones de escritura
+    // (ver checkActiveStatusMiddleware en las rutas de agregar/editar/eliminar).
     
     // Verificar contraseña
     let validPassword = false;
@@ -171,7 +172,8 @@ class AuthService {
         beneficiaryCode: user.beneficiary_code,
         firstName: user.first_name,
         lastName: user.last_name,
-        isVerified: user.is_verified
+        isVerified: user.is_verified,
+        isActive: user.is_active
       }
     };
   }
@@ -308,6 +310,7 @@ class AuthService {
   async getProfile(userId) {
     const result = await db.query(
       `SELECT u.id, u.email, u.username, u.role, u.beneficiary_id, u.is_verified,
+              u.is_active as "isActive",
               b.code as beneficiary_code, b.first_name, b.last_name
        FROM users u
        LEFT JOIN beneficiaries b ON u.beneficiary_id = b.id

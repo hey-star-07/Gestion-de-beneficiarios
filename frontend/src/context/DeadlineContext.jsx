@@ -65,14 +65,34 @@ export const DeadlineProvider = ({ children }) => {
     }
   }, [user, authLoading, hasLoaded])
 
-  // Admin SIEMPRE puede editar, sin importar la fecha
-  const canEdit = user?.role === 'ADMIN' || !deadlineInfo.isActive || !deadlineInfo.isExpired
+  // Refrescar la fecha límite periódicamente. Esto además dispara en el
+  // backend la desactivación automática al vencer el plazo.
+  useEffect(() => {
+    if (!user) return
+
+    const interval = setInterval(loadDeadline, 30000)
+    return () => clearInterval(interval)
+  }, [user?.id])
+
+  // Admin SIEMPRE puede editar, sin importar la fecha o el estado de la cuenta
+  const isAdmin = user?.role === 'ADMIN'
+
+  // Cuenta deshabilitada (por el admin, o automáticamente al vencer el plazo)
+  const isAccountDisabled = !isAdmin && user?.isActive === false
+
+  // El permiso de edición depende SOLO del estado de la cuenta.
+  // Al vencer el plazo, el backend deshabilita automáticamente a los
+  // beneficiarios; por eso no hace falta (ni conviene) volver a validar la
+  // fecha aquí: si se validara, rehabilitar a alguien pasada la fecha no
+  // tendría ningún efecto.
+  const canEdit = isAdmin || !isAccountDisabled
 
   return (
     <DeadlineContext.Provider value={{
       deadlineInfo,
       loading,
       canEdit,
+      isAccountDisabled,
       reloadDeadline: loadDeadline
     }}>
       {children}

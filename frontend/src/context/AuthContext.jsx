@@ -77,11 +77,62 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
   }
 
+  /**
+   * Vuelve a consultar el estado de la cuenta en el servidor y lo
+   * sincroniza con el estado local. Sirve para que, cuando el admin
+   * habilita o deshabilita a un beneficiario, el cambio se refleje en su
+   * panel sin que tenga que volver a iniciar sesión.
+   *
+   * Solo se fusiona `isActive`: el resto del objeto `user` (que viene del
+   * login) se conserva para no perder campos con otro formato de nombre.
+   */
+  const refreshUser = async () => {
+    if (!localStorage.getItem('token')) return
+
+    try {
+      const response = await authService.getProfile()
+      const fresh = response?.data?.data
+
+      if (!fresh) return
+
+      setUser(prev => {
+        if (!prev) return prev
+        if (prev.isActive === fresh.isActive) return prev
+
+        const updated = { ...prev, isActive: fresh.isActive }
+        localStorage.setItem('user', JSON.stringify(updated))
+        return updated
+      })
+    } catch (error) {
+      if (error.response?.status !== 401) {
+        console.error('Error al refrescar estado del usuario:', error)
+      }
+    }
+  }
+
+  // Sondeo periódico del estado de la cuenta (solo para beneficiarios).
+  // También se refresca al volver a la pestaña, para que el cambio se vea
+  // de inmediato sin esperar al siguiente intervalo.
+  useEffect(() => {
+    if (!user || user.role === 'ADMIN') return
+
+    const interval = setInterval(refreshUser, 15000)
+
+    const onFocus = () => refreshUser()
+    window.addEventListener('focus', onFocus)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [user?.id, user?.role])
+
   const value = {
     user,
     loading,
     login,
-    logout
+    logout,
+    refreshUser
   }
 
   return (

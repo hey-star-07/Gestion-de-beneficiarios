@@ -141,18 +141,27 @@ const Profile = () => {
             onClick={() => handleMenuSelect(item.id)}
             sx={{
               mb: 1,
-              mx: 1,
+              mx: 1.5,
+              // ListItem trae width: 100% por defecto, así que el margen
+              // horizontal lo empujaba fuera del borde del panel. Con
+              // width: auto el margen sí lo encoge en vez de desbordarlo.
+              width: 'auto',
+              px: 1.5,
               borderRadius: 2,
               border: '2px solid transparent',
               transition: 'all 0.2s ease',
               bgcolor: activeSection === item.id ? '#f0f7ff' : 'transparent',
+              borderColor: activeSection === item.id ? '#1a237e' : 'transparent',
               '&:hover': {
                 bgcolor: '#f0f7ff',
-                border: '2px solid #1a237e'
+                borderColor: '#1a237e'
               }
             }}
           >
-            <ListItemIcon sx={{ color: activeSection === item.id ? '#1a237e' : '#4a4a4a' }}>
+            <ListItemIcon sx={{ 
+              minWidth: 40,
+              color: activeSection === item.id ? '#1a237e' : '#4a4a4a' 
+            }}>
               {item.icon}
             </ListItemIcon>
             <ListItemText 

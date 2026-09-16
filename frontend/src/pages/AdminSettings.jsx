@@ -31,18 +31,28 @@ import {
 import { motion } from 'framer-motion'
 import { settingService } from '../services/setting.service'
 import { useDeadline } from '../context/DeadlineContext'
+import ConfirmDialog from '../components/common/ConfirmDialog'
 
 const AdminSettings = () => {
   const navigate = useNavigate()
   const { deadlineInfo, reloadDeadline } = useDeadline()
   const [deadline, setDeadline] = useState('')
   const [loading, setLoading] = useState(false)
+  const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false)
+
+  // El input type="datetime-local" espera la hora en horario LOCAL del
+  // navegador, sin sufijo de zona horaria. Usar toISOString() aquí daría
+  // la hora en UTC y desfasaría la visualización (ej. +4h en Bolivia),
+  // aunque el valor guardado en la base de datos sea correcto.
+  const toLocalDatetimeValue = (isoString) => {
+    const d = new Date(isoString)
+    const pad = (n) => String(n).padStart(2, '0')
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  }
 
   useEffect(() => {
     if (deadlineInfo.deadline) {
-      const date = new Date(deadlineInfo.deadline)
-      const formatted = date.toISOString().slice(0, 16)
-      setDeadline(formatted)
+      setDeadline(toLocalDatetimeValue(deadlineInfo.deadline))
     }
   }, [deadlineInfo])
 
@@ -65,11 +75,11 @@ const AdminSettings = () => {
     }
   }
 
-  const handleRemove = async () => {
-    if (!window.confirm('¿Estás seguro de eliminar la fecha límite? Los beneficiarios podrán editar sin restricciones.')) {
-      return
-    }
+  const handleRemove = () => {
+    setConfirmRemoveOpen(true)
+  }
 
+  const confirmRemove = async () => {
     setLoading(true)
     try {
       await settingService.removeDeadline()
@@ -81,6 +91,7 @@ const AdminSettings = () => {
       toast.error('Error al eliminar')
     } finally {
       setLoading(false)
+      setConfirmRemoveOpen(false)
     }
   }
 
@@ -242,9 +253,11 @@ const AdminSettings = () => {
               sx={{
                 mb: 3,
                 '& .MuiOutlinedInput-root': {
-                  border: '2px solid #1a1a1a',
                   borderRadius: 2,
-                  bgcolor: '#ffffff'
+                  bgcolor: '#ffffff',
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    border: '2px solid #1a1a1a'
+                  }
                 }
               }}
             />
@@ -293,6 +306,17 @@ const AdminSettings = () => {
           </Paper>
         </motion.div>
       </Container>
+
+      <ConfirmDialog
+        open={confirmRemoveOpen}
+        severity="delete"
+        title="¿Eliminar fecha límite?"
+        message="Los beneficiarios podrán editar sus datos sin restricciones de fecha. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        loading={loading}
+        onConfirm={confirmRemove}
+        onClose={() => setConfirmRemoveOpen(false)}
+      />
     </Box>
   )
 }

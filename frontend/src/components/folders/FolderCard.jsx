@@ -28,51 +28,67 @@ const FolderCard = ({ beneficiary }) => {
       whileTap={{ scale: 0.95 }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
+      style={{ height: '100%' }}
     >
       <Card
         sx={{
           cursor: 'pointer',
           height: '100%',
           textAlign: 'center',
-          p: 3,
           border: '3px solid #1a1a1a',
-          borderRadius: 4,
-          boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
+          borderRadius: 3,
+          boxShadow: '4px 4px 0px rgba(26,26,26,0.2)',
           bgcolor: '#fffdf9',
           transition: 'all 0.2s ease',
           '&:hover': {
             transform: 'translateY(-4px)',
-            boxShadow: '7px 7px 0px rgba(26,26,26,0.15)'
+            boxShadow: '6px 6px 0px rgba(26,26,26,0.15)'
           }
         }}
         onClick={handleClick}
       >
-        <CardContent>
+        <CardContent
+          sx={{
+            p: 1.5,
+            '&:last-child': { pb: 1.5 },
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+          }}
+        >
           {isHovered ? (
-            <FolderOpen sx={{ fontSize: 80, color: '#ff6b00' }} />
+            <FolderOpen sx={{ fontSize: { xs: 48, lg: 52 }, color: '#ff6b00' }} />
           ) : (
-            <Folder sx={{ fontSize: 80, color: '#1a237e' }} />
+            <Folder sx={{ fontSize: { xs: 48, lg: 52 }, color: '#1a237e' }} />
           )}
-          
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              mt: 2, 
+
+          <Typography
+            sx={{
+              mt: 0.5,
               fontWeight: 700,
+              fontSize: '0.95rem',
               fontFamily: 'Playfair Display',
-              color: '#1a237e'
+              color: '#1a237e',
+              lineHeight: 1.2
             }}
           >
             {beneficiary?.code || 'N/A'}
           </Typography>
-          
-          <Typography 
-            variant="body1" 
-            sx={{ 
-              mt: 1,
+
+          <Typography
+            sx={{
+              mt: 0.5,
+              fontSize: '0.75rem',
               fontFamily: 'Playfair Display',
-              color: '#333'
+              color: '#333',
+              lineHeight: 1.25,
+              // Evita que un nombre largo desalinee las tarjetas
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
             }}
+            title={`${beneficiary?.first_name || ''} ${beneficiary?.last_name || ''}`.trim()}
           >
             {beneficiary?.first_name || ''} {beneficiary?.last_name || ''}
           </Typography>

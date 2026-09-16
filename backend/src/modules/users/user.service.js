@@ -73,6 +73,23 @@ class UserModel {
     return result.rows[0];
   }
 
+  /**
+   * Deshabilita a TODOS los usuarios con rol USER (beneficiarios).
+   * Se usa cuando vence la fecha límite de carga de datos.
+   * Nunca toca a los ADMIN.
+   */
+  async deactivateAllBeneficiaries() {
+    const result = await db.query(
+      `UPDATE users
+       SET is_active = false,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE role = 'USER' AND is_active = true
+       RETURNING id`
+    );
+
+    return result.rows;
+  }
+
   async list(filters = {}) {
     let query = `
       SELECT id, email, username, role, beneficiary_id, is_verified, is_active, created_at, last_login

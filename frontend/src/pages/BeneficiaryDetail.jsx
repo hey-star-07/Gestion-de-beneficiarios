@@ -37,6 +37,7 @@ import {
   Visibility
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
+import ConfirmDialog from '../components/common/ConfirmDialog'
  
 const BeneficiaryDetail = () => {
   const { code } = useParams()
@@ -46,6 +47,7 @@ const BeneficiaryDetail = () => {
   const [tabValue, setTabValue] = useState(0)
   const [error, setError] = useState(null)
   const [statusLoading, setStatusLoading] = useState(false)
+  const [confirmToggleOpen, setConfirmToggleOpen] = useState(false)
 
   const UPLOADS_URL = 'http://localhost:3000'
 
@@ -140,15 +142,13 @@ const BeneficiaryDetail = () => {
     })
   }
 
-  const handleToggleStatus = async () => {
+  const handleToggleStatus = () => {
     if (!beneficiary) return
-    
+    setConfirmToggleOpen(true)
+  }
+
+  const confirmToggleStatus = async () => {
     const newStatus = beneficiary.is_active === false ? true : false
-    const action = newStatus ? 'habilitar' : 'deshabilitar'
-    
-    if (!window.confirm(`¿Estás seguro de ${action} a ${beneficiary.first_name} ${beneficiary.last_name}?`)) {
-      return
-    }
     
     setStatusLoading(true)
     try {
@@ -166,6 +166,7 @@ const BeneficiaryDetail = () => {
       toast.error(error.response?.data?.error || 'Error al cambiar estado')
     } finally {
       setStatusLoading(false)
+      setConfirmToggleOpen(false)
     }
   }
 
@@ -815,6 +816,21 @@ const BeneficiaryDetail = () => {
           </Paper>
         </motion.div>
       </Container>
+
+      <ConfirmDialog
+        open={confirmToggleOpen}
+        severity={beneficiary.is_active !== false ? 'disable' : 'success'}
+        title={beneficiary.is_active !== false ? '¿Deshabilitar beneficiario?' : '¿Habilitar beneficiario?'}
+        message={
+          beneficiary.is_active !== false
+            ? `${beneficiary.first_name} ${beneficiary.last_name} no podrá agregar, editar ni eliminar sus datos hasta que vuelvas a habilitarlo. Podrá seguir viendo su perfil normalmente.`
+            : `${beneficiary.first_name} ${beneficiary.last_name} podrá volver a agregar, editar y eliminar sus datos.`
+        }
+        confirmLabel={beneficiary.is_active !== false ? 'Deshabilitar' : 'Habilitar'}
+        loading={statusLoading}
+        onConfirm={confirmToggleStatus}
+        onClose={() => setConfirmToggleOpen(false)}
+      />
     </Box>
   )
 }

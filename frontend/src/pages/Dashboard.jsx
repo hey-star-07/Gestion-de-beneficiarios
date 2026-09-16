@@ -81,13 +81,30 @@ const Dashboard = () => {
     }
   }
 
+  // Quita tildes/diacríticos y pasa a minúsculas para que la búsqueda
+  // funcione igual escribiendo "Martinez" o "Martínez".
+  const normalize = (text) =>
+    (text || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim()
+
   useEffect(() => {
     if (searchTerm && Array.isArray(beneficiaries)) {
-      const filtered = beneficiaries.filter(b => 
-        b?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b?.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        b?.last_name?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      // Se busca palabra por palabra: así "esther carvajal" encuentra a
+      // "Esther Mayerly Carvajal Quispe" aunque se omita el segundo nombre.
+      const words = normalize(searchTerm).split(/\s+/).filter(Boolean)
+
+      const filtered = beneficiaries.filter(b => {
+        const haystack = normalize(
+          `${b?.code || ''} ${b?.first_name || ''} ${b?.last_name || ''}`
+        )
+
+        return words.every(word => haystack.includes(word))
+      })
+
       setFilteredBeneficiaries(filtered)
     } else {
       setFilteredBeneficiaries(beneficiaries)

@@ -5,13 +5,42 @@ import {
   CheckCircle, 
   Cancel,
   Warning,
-  EventAvailable
+  EventAvailable,
+  Block
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { useDeadline } from '../../context/DeadlineContext'
 
 const DeadlineBanner = () => {
-  const { deadlineInfo } = useDeadline()
+  const { deadlineInfo, isAccountDisabled } = useDeadline()
+
+  if (isAccountDisabled) {
+    return (
+      <Box sx={{
+        p: 2,
+        mb: 3,
+        bgcolor: '#ffebee',
+        border: '2px solid #1a1a1a',
+        borderRadius: 3,
+        boxShadow: '3px 3px 0px rgba(26,26,26,0.15)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 2
+      }}>
+        <Block sx={{ color: '#ff1744', fontSize: 28 }} />
+        <Box>
+          <Typography sx={{ fontFamily: 'Playfair Display', fontWeight: 700, color: '#1a1a1a' }}>
+            {deadlineInfo.isExpired
+              ? 'El plazo para modificar datos ha terminado'
+              : 'Tu cuenta está deshabilitada para edición'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Puedes ver todos tus datos y documentos, pero no puedes agregar, editar ni eliminar información. Si necesitas hacer un cambio, contacta al administrador.
+          </Typography>
+        </Box>
+      </Box>
+    )
+  }
 
   if (!deadlineInfo.isActive) {
     return (

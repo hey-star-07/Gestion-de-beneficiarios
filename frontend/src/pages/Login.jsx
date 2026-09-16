@@ -148,7 +148,7 @@ const Login = () => {
           <form onSubmit={handleSubmit}>
             <TextField
               fullWidth
-              label="Email, Usuario o Código"
+              label="Email o Código"
               name="identifier"
               value={formData.identifier}
               onChange={handleChange}
