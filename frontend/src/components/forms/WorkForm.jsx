@@ -65,8 +65,10 @@ const WorkForm = ({ profile, onUpdate }) => {
       
       await beneficiaryService.updateMyProfile(dataToSend)
       toast.success('¡Información laboral guardada! 💼')
+      // Esperamos a que el perfil se recargue con los datos frescos ANTES
+      // de volver a la vista de solo lectura.
+      if (onUpdate) await onUpdate()
       setIsEditing(false)
-      if (onUpdate) onUpdate()
     } catch (error) {
       console.error('❌ Error:', error)
       toast.error('Error al guardar la información')

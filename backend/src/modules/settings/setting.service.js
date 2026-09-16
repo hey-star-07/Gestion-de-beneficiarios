@@ -5,6 +5,10 @@ const UserModel = require('../users/user.service');
 // para no volver a deshabilitar a alguien que el admin ya rehabilitó.
 const EXPIRY_APPLIED_KEY = 'deadline_expiry_applied_for';
 
+// Caché en memoria: una vez aplicada la desactivación para cierta fecha
+// límite, no hace falta volver a consultar la BD en cada petición.
+let appliedForDeadline = null;
+
 class SettingService {
   /**
    * Si la fecha límite ya venció y todavía no se aplicó la desactivación
@@ -24,10 +28,16 @@ class SettingService {
 
     if (!isExpired) return;
 
+    // Ya aplicada en este proceso para esta misma fecha
+    if (appliedForDeadline === deadlineValue) return;
+
     const applied = await SettingModel.getByKey(EXPIRY_APPLIED_KEY);
 
     // Ya se aplicó para esta misma fecha límite: no hacer nada
-    if (applied && applied.setting_value === deadlineValue) return;
+    if (applied && applied.setting_value === deadlineValue) {
+      appliedForDeadline = deadlineValue;
+      return;
+    }
 
     const disabled = await UserModel.deactivateAllBeneficiaries();
 
@@ -37,6 +47,8 @@ class SettingService {
       'Fecha límite para la cual ya se aplicó la desactivación automática',
       null
     );
+
+    appliedForDeadline = deadlineValue;
 
     console.log(`⏰ Plazo vencido: ${disabled.length} beneficiario(s) deshabilitado(s) automáticamente`);
   }
@@ -100,6 +112,7 @@ class SettingService {
     // Es una fecha límite nueva: al vencer, deberá aplicarse de nuevo
     // la desactivación automática.
     await SettingModel.deleteByKey(EXPIRY_APPLIED_KEY);
+    appliedForDeadline = null;
     
     return result;
   }
@@ -113,6 +126,7 @@ class SettingService {
     );
 
     await SettingModel.deleteByKey(EXPIRY_APPLIED_KEY);
+    appliedForDeadline = null;
     
     return { message: 'Fecha límite eliminada' };
   }

@@ -68,8 +68,11 @@ const ChurchForm = ({ profile, onUpdate }) => {
       
       await beneficiaryService.updateMyProfile(dataToSend)
       toast.success('¡Información de iglesia guardada! ⛪')
+      // Esperamos a que el perfil se recargue con los datos frescos ANTES
+      // de volver a la vista de solo lectura; si no se espera, la vista
+      // podía mostrarse un instante con los datos viejos.
+      if (onUpdate) await onUpdate()
       setIsEditing(false)
-      if (onUpdate) onUpdate()
     } catch (error) {
       console.error('❌ Error:', error)
       toast.error(error.response?.data?.error || 'Error al guardar la información')

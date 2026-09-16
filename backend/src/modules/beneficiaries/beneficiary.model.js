@@ -1,9 +1,15 @@
 const db = require('../../config/database');
 
 class BeneficiaryModel {
+  // NOTA: is_active vive en la tabla `users`, no en `beneficiaries`.
+  // Por eso estas consultas hacen JOIN: sin él, el panel del admin
+  // recibía is_active = undefined y siempre mostraba "ACTIVO".
   async findById(id) {
     const result = await db.query(
-      `SELECT * FROM beneficiaries WHERE id = $1`,
+      `SELECT b.*, u.is_active
+       FROM beneficiaries b
+       LEFT JOIN users u ON b.id = u.beneficiary_id
+       WHERE b.id = $1`,
       [id]
     );
     return result.rows[0];
@@ -11,7 +17,10 @@ class BeneficiaryModel {
 
   async findByCode(code) {
     const result = await db.query(
-      'SELECT * FROM beneficiaries WHERE code = $1',
+      `SELECT b.*, u.is_active
+       FROM beneficiaries b
+       LEFT JOIN users u ON b.id = u.beneficiary_id
+       WHERE b.code = $1`,
       [code]
     );
     return result.rows[0];
@@ -20,7 +29,7 @@ class BeneficiaryModel {
   async list(filters = {}) {
     let query = `
       SELECT b.*, 
-             u.id as user_id, u.email as user_email, u.is_verified
+             u.id as user_id, u.email as user_email, u.is_verified, u.is_active
       FROM beneficiaries b
       LEFT JOIN users u ON b.id = u.beneficiary_id
       WHERE 1=1

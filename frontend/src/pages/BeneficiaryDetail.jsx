@@ -108,7 +108,10 @@ const BeneficiaryDetail = () => {
       const finalData = {
         ...beneficiaryData,
         ...completeData,
-        is_active: beneficiaryData.is_active !== false,
+        // is_active llega desde la tabla users vía JOIN. Solo se considera
+        // deshabilitado cuando es explícitamente false; si el beneficiario
+        // no tiene usuario asociado llega null y se muestra como activo.
+        is_active: (completeData?.is_active ?? beneficiaryData?.is_active) !== false,
         educationProfiles: completeData?.educationProfiles || [],
         familyMembers: completeData?.familyMembers || []
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { beneficiaryService } from '../services/beneficiary.service'
 import { useNavigate } from 'react-router-dom'
@@ -54,26 +54,42 @@ const Profile = () => {
   const navigate = useNavigate()
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('md'))
+  const hasLoadedOnce = useRef(false)
 
   const { canEdit } = useDeadline()
 
   const loadProfile = useCallback(async () => {
     try {
-      setLoading(true)
+      // Solo mostramos "Cargando..." de pantalla completa en la carga
+      // inicial. En recargas posteriores (después de guardar algo) NO
+      // desmontamos el formulario activo: eso es lo que causaba que, tras
+      // guardar Iglesia/Trabajo o subir el croquis, la pantalla se
+      // reiniciara a mitad de camino y pareciera que "no guardó" o que
+      // el archivo se subía solo sin dejar terminar de editar.
+      if (!hasLoadedOnce.current) {
+        setLoading(true)
+      }
+
       const response = await beneficiaryService.getMyProfile()
       console.log('📋 Perfil cargado:', response)
-      
+
+      let freshProfile = null
       if (response?.data) {
-        setProfile(response.data)
+        freshProfile = response.data
       } else if (response?.beneficiary) {
-        setProfile(response.beneficiary)
+        freshProfile = response.beneficiary
       } else {
-        setProfile(response)
+        freshProfile = response
       }
+
+      setProfile(freshProfile)
+      return freshProfile
     } catch (error) {
       console.error('❌ Error al cargar perfil:', error)
       toast.error('Error al cargar tu perfil')
+      return null
     } finally {
+      hasLoadedOnce.current = true
       setLoading(false)
     }
   }, [])

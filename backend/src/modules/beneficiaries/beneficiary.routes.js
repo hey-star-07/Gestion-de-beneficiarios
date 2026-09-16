@@ -5,9 +5,24 @@ const { authMiddleware } = require('../../middlewares/auth.middleware');
 const { roleMiddleware, isOwnerOrAdmin } = require('../../middlewares/role.middleware');
 const { upload } = require('../../config/upload');
 const { checkActiveStatusMiddleware } = require('../../middlewares/account-status.middleware');
+const SettingService = require('../../modules/settings/setting.service');
 
 // Todas las rutas requieren autenticación
 router.use(authMiddleware);
+
+// Aplica la desactivación automática si el plazo ya venció, ANTES de
+// responder cualquier consulta. Así el admin ve el estado real
+// ("DESHABILITADO") apenas abre el panel, sin esperar a otro evento.
+// Es idempotente y usa caché en memoria, por lo que no golpea la BD
+// en cada petición.
+router.use(async (req, res, next) => {
+  try {
+    await SettingService.applyDeadlineExpiryIfNeeded();
+  } catch (error) {
+    console.error('Error aplicando vencimiento del plazo:', error);
+  }
+  next();
+});
 
 // Bloquea escritura si la cuenta está deshabilitada.
 // La fecha límite NO se valida aquí por separado: al vencer, deshabilita

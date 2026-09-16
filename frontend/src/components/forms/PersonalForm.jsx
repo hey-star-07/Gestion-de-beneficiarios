@@ -63,16 +63,21 @@ const PersonalForm = ({ profile, onUpdate }) => {
     }))
   }
 
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     if (!canEdit) {
       toast.error('El plazo para modificar datos ha expirado')
       return
     }
-    
+
     const file = e.target.files[0]
     if (file) {
+      // Solo se guarda localmente (con su vista previa). El archivo se
+      // sube recién al presionar "Guardar Datos", junto con el resto del
+      // formulario — igual que el horario en la sección de Estudios.
+      // Antes se subía apenas se seleccionaba, lo que guardaba el croquis
+      // sin dejar verlo ni confirmar con el botón de guardar.
       setUploadedFile(file)
-      
+
       if (file.type.startsWith('image/')) {
         const reader = new FileReader()
         reader.onloadend = () => {
@@ -82,22 +87,8 @@ const PersonalForm = ({ profile, onUpdate }) => {
       } else if (file.type === 'application/pdf') {
         setFilePreview('pdf')
       }
-      
-      try {
-        const formData = new FormData()
-        formData.append('file', file)
-        formData.append('fieldname', 'croquis_file')
-        
-        const response = await beneficiaryService.uploadFile(formData)
-        toast.success('Croquis subido exitosamente')
-        
-        if (onUpdate) {
-          await onUpdate()
-        }
-      } catch (error) {
-        console.error('❌ Error al subir archivo:', error)
-        toast.error(error.response?.data?.error || 'Error al subir el archivo')
-      }
+
+      toast.success('Croquis seleccionado. Presiona "Guardar Datos" para confirmarlo.')
     }
   }
 
@@ -113,12 +104,26 @@ const PersonalForm = ({ profile, onUpdate }) => {
 
     try {
       await beneficiaryService.updateMyProfile(formData)
+
+      // Si se seleccionó un croquis nuevo, se sube recién aquí, al
+      // confirmar el guardado.
+      if (uploadedFile) {
+        const fileFormData = new FormData()
+        fileFormData.append('file', uploadedFile)
+        fileFormData.append('fieldname', 'croquis_file')
+        await beneficiaryService.uploadFile(fileFormData)
+        setUploadedFile(null)
+        setFilePreview(null)
+      }
+
       toast.success('¡Datos guardados exitosamente! 🎉')
-      setIsEditing(false)
-      
+
+      // Esperamos a que el perfil se recargue con los datos frescos ANTES
+      // de volver a la vista de solo lectura.
       if (onUpdate) {
         await onUpdate()
       }
+      setIsEditing(false)
     } catch (error) {
       console.error('❌ Error al guardar:', error)
       toast.error(error.response?.data?.error || 'Error al guardar los datos')
@@ -380,6 +385,12 @@ const PersonalForm = ({ profile, onUpdate }) => {
                 disabled={!canEdit}
               />
             </Button>
+
+            {(filePreview || uploadedFile) && (
+              <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
+                Se guardará junto con el resto de tus datos al presionar "Guardar Datos".
+              </Typography>
+            )}
             
             {filePreview && filePreview !== 'pdf' && (
               <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
@@ -464,7 +475,11 @@ const PersonalForm = ({ profile, onUpdate }) => {
           </Button>
           <Button
             variant="outlined"
-            onClick={() => setIsEditing(false)}
+            onClick={() => {
+              setIsEditing(false)
+              setUploadedFile(null)
+              setFilePreview(null)
+            }}
             sx={{
               border: '2px solid #1a1a1a',
               boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
