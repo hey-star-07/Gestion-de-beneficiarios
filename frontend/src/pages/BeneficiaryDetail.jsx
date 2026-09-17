@@ -50,14 +50,13 @@ const BeneficiaryDetail = () => {
   const [confirmToggleOpen, setConfirmToggleOpen] = useState(false)
 
   const UPLOADS_URL = 'http://localhost:3000'
-
   useEffect(() => {
     console.log('📋 BeneficiaryDetail montado con código:', code)
     
     if (code) {
       loadBeneficiary(code)
     } else {
-      setError('No se proporcionó un código de beneficiario')
+      setError('No se proporcionó un código de Patrocinado')
       setLoading(false)
     }
   }, [code])
@@ -67,7 +66,7 @@ const BeneficiaryDetail = () => {
     setError(null)
     
     try {
-      console.log('🔍 Cargando beneficiario:', beneficiaryCode)
+      console.log('🔍 Cargando Patrocinado:', beneficiaryCode)
       
       const codeResponse = await beneficiaryService.getByCode(beneficiaryCode)
       console.log('📦 Respuesta getByCode:', codeResponse)
@@ -86,11 +85,11 @@ const BeneficiaryDetail = () => {
         beneficiaryId = beneficiaryData?.id
       }
       
-      console.log('👤 Datos del beneficiario:', beneficiaryData)
+      console.log('👤 Datos del Patrocinado:', beneficiaryData)
       console.log('🆔 ID:', beneficiaryId)
       
       if (!beneficiaryId) {
-        throw new Error('No se pudo obtener el ID del beneficiario')
+        throw new Error('No se pudo obtener el ID del Patrocinado')
       }
       
       const completeResponse = await beneficiaryService.getCompleteProfile(beneficiaryId)
@@ -109,7 +108,7 @@ const BeneficiaryDetail = () => {
         ...beneficiaryData,
         ...completeData,
         // is_active llega desde la tabla users vía JOIN. Solo se considera
-        // deshabilitado cuando es explícitamente false; si el beneficiario
+        // deshabilitado cuando es explícitamente false; si el Patrocinado
         // no tiene usuario asociado llega null y se muestra como activo.
         is_active: (completeData?.is_active ?? beneficiaryData?.is_active) !== false,
         educationProfiles: completeData?.educationProfiles || [],
@@ -120,9 +119,9 @@ const BeneficiaryDetail = () => {
       setBeneficiary(finalData)
       
     } catch (error) {
-      console.error('❌ Error al cargar beneficiario:', error)
+      console.error('❌ Error al cargar Patrocinado:', error)
       setError(error.response?.data?.error || error.message || 'Error al cargar los datos')
-      toast.error('Error al cargar los datos del beneficiario')
+      toast.error('Error al cargar los datos del Patrocinado')
     } finally {
       setLoading(false)
     }
@@ -162,7 +161,7 @@ const BeneficiaryDetail = () => {
       
       if (response.success) {
         setBeneficiary(prev => ({ ...prev, is_active: newStatus }))
-        toast.success(`Beneficiario ${newStatus ? 'habilitado' : 'deshabilitado'} exitosamente`)
+        toast.success(`Patrocinado ${newStatus ? 'habilitado' : 'deshabilitado'} exitosamente`)
       }
     } catch (error) {
       console.error('❌ Error:', error)
@@ -225,7 +224,7 @@ const BeneficiaryDetail = () => {
           maxWidth: 400
         }}>
           <Typography variant="h5" sx={{ mb: 2, fontFamily: 'Playfair Display' }}>
-            {error || 'Beneficiario no encontrado'}
+            {error || 'Patrocinado no encontrado'}
           </Typography>
           <Button 
             variant="contained" 
@@ -272,7 +271,7 @@ const BeneficiaryDetail = () => {
               fontWeight: 700
             }}
           >
-            Perfil del Beneficiario
+            Perfil del Patrocinado
           </Typography>
         </Toolbar>
       </AppBar>
@@ -346,9 +345,6 @@ const BeneficiaryDetail = () => {
                     }}
                   />
                 </Box>
-                <Typography variant="body1" color="text.secondary">
-                  Beneficiario desde {formatDate(beneficiary.created_at)}
-                </Typography>
               </Grid>
               
               {/* Botón de habilitar/deshabilitar */}
@@ -823,7 +819,7 @@ const BeneficiaryDetail = () => {
       <ConfirmDialog
         open={confirmToggleOpen}
         severity={beneficiary.is_active !== false ? 'disable' : 'success'}
-        title={beneficiary.is_active !== false ? '¿Deshabilitar beneficiario?' : '¿Habilitar beneficiario?'}
+        title={beneficiary.is_active !== false ? '¿Deshabilitar Patrocinado?' : '¿Habilitar Patrocinado?'}
         message={
           beneficiary.is_active !== false
             ? `${beneficiary.first_name} ${beneficiary.last_name} no podrá agregar, editar ni eliminar sus datos hasta que vuelvas a habilitarlo. Podrá seguir viendo su perfil normalmente.`

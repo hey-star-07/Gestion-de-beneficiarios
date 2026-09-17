@@ -47,6 +47,21 @@ app.use(morgan('dev'));
 
 // Servir archivos estáticos
 const { UPLOAD_ROOT } = require('./config/upload');
+
+// Helmet (arriba) agrega `X-Frame-Options: SAMEORIGIN` a TODAS las
+// respuestas por defecto, incluida esta carpeta estática. Eso bloquea
+// silenciosamente los PDFs cuando se muestran en un <iframe> desde el
+// frontend (otro origen: puerto 5173 vs 3000) — el navegador simplemente
+// no los renderiza, sin error visible. Las imágenes no se ven afectadas
+// porque ese header solo restringe <iframe>/<frame>/<object>, nunca <img>.
+//
+// Los archivos de /uploads (croquis, horarios) están pensados para
+// visualizarse embebidos dentro de la propia app, así que se les quita
+// el header antes de servirlos.
+app.use('/uploads', (req, res, next) => {
+  res.removeHeader('X-Frame-Options');
+  next();
+});
 app.use('/uploads', express.static(UPLOAD_ROOT));
 console.log('📁 Sirviendo archivos desde:', UPLOAD_ROOT);
 

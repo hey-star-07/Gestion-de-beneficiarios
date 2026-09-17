@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   Avatar,
-  Divider,
   IconButton,
   InputAdornment,
   Dialog,
@@ -54,50 +53,189 @@ const StudyForm = ({ profile, onUpdate }) => {
   })
   const [loading, setLoading] = useState(false)
   const [schedulePreview, setSchedulePreview] = useState(null)
+  // URL temporal (blob:) del horario seleccionado, para el visor de PDF.
+  const [scheduleObjectUrl, setScheduleObjectUrl] = useState(null)
+  // Visor interno: { open, type: 'image' | 'pdf', src, name }
+  const [previewDialog, setPreviewDialog] = useState({ open: false })
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [educationToDelete, setEducationToDelete] = useState(null)
 
   const UPLOADS_URL = 'http://localhost:3000'
 
+  // Única fuente de verdad para la lista: el perfil que baja del padre
+  // (Profile.jsx) vía props, refrescado con onUpdate(). NO se vuelve a
+  // pedir el perfil acá dentro con otra llamada aparte: eso es lo que
+  // causaba el bug (una llamada mal interpretada pisaba esta lista con
+  // un arreglo vacío justo después de guardar, y el formulario nunca
+  // volvía a la vista de tarjetas).
   useEffect(() => {
     if (profile?.educationProfiles) {
       setEducationProfiles(profile.educationProfiles)
     }
   }, [profile])
 
+  // Libera la URL temporal al cambiarla o al desmontar el componente.
+  useEffect(() => {
+    return () => {
+      if (scheduleObjectUrl) URL.revokeObjectURL(scheduleObjectUrl)
+    }
+  }, [scheduleObjectUrl])
+
+  const clearSelectedSchedule = () => {
+    if (scheduleObjectUrl) URL.revokeObjectURL(scheduleObjectUrl)
+    setScheduleObjectUrl(null)
+    setSchedulePreview(null)
+    setNewEducation(prev => ({ ...prev, schedule_file: null }))
+  }
+
   const handleFileChange = (e) => {
     if (!canEdit) {
       toast.error('El plazo para modificar datos ha expirado')
       return
     }
-    
+
     const file = e.target.files[0]
-    if (file) {
-      setNewEducation({
-        ...newEducation,
-        schedule_file: file
-      })
-      
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader()
-        reader.onloadend = () => {
-          setSchedulePreview(reader.result)
-        }
-        reader.readAsDataURL(file)
-      } else if (file.type === 'application/pdf') {
-        setSchedulePreview('pdf')
+    if (!file) return
+
+    if (scheduleObjectUrl) URL.revokeObjectURL(scheduleObjectUrl)
+    setScheduleObjectUrl(URL.createObjectURL(file))
+
+    setNewEducation(prev => ({
+      ...prev,
+      schedule_file: file
+    }))
+
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setSchedulePreview(reader.result)
       }
-      
-      toast.success(`Horario seleccionado: ${file.name}`)
+      reader.readAsDataURL(file)
+    } else if (file.type === 'application/pdf') {
+      setSchedulePreview('pdf')
     }
+
+    toast.success(`Horario seleccionado: ${file.name}`)
+
+    // Permite volver a elegir el mismo archivo si lo quitas y lo vuelves a subir.
+    e.target.value = ''
   }
+
+  // Abre el horario YA GUARDADO en el servidor dentro del modal.
+  const handleViewSavedSchedule = (education) => {
+    if (!education?.schedule_file) return
+    const fileUrl = `${UPLOADS_URL}/uploads/schedules/${education.schedule_file}`
+    setPreviewDialog({
+      open: true,
+      type: education.schedule_file.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
+      src: fileUrl,
+      name: `Horario — ${education.career_name || 'Estudio'}`
+    })
+  }
+
+  // Abre el horario AÚN NO SUBIDO (el que se acaba de seleccionar).
+  // No se usa window.open() con un data:URL porque los navegadores
+  // bloquean esa navegación (pantalla en blanco); se muestra en el modal.
+  const handlePreviewSelectedSchedule = () => {
+    if (!newEducation.schedule_file) return
+    setPreviewDialog({
+      open: true,
+      type: schedulePreview === 'pdf' ? 'pdf' : 'image',
+      src: schedulePreview === 'pdf' ? scheduleObjectUrl : schedulePreview,
+      name: newEducation.schedule_file.name
+    })
+  }
+
+  const closePreview = () => setPreviewDialog({ open: false })
+
+  // Modal de vista previa, compartido por el horario guardado y el seleccionado.
+  const previewModal = (
+    <Dialog
+      open={Boolean(previewDialog.open)}
+      onClose={closePreview}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          border: '3px solid #1a1a1a',
+          borderRadius: 3,
+          boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
+          bgcolor: '#fffdf9'
+        }
+      }}
+    >
+      <DialogTitle sx={{
+        fontFamily: 'Playfair Display',
+        fontWeight: 700,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        {previewDialog.name || 'Vista previa'}
+        <IconButton onClick={closePreview} size="small">
+          <Close />
+        </IconButton>
+      </DialogTitle>
+      <DialogContent dividers sx={{ bgcolor: '#faf8f3' }}>
+        {previewDialog.type === 'pdf' ? (
+          <Box
+            component="iframe"
+            src={previewDialog.src}
+            title={previewDialog.name || 'Documento'}
+            sx={{
+              width: '100%',
+              height: { xs: '60vh', md: '70vh' },
+              border: '2px solid #1a1a1a',
+              borderRadius: 2,
+              bgcolor: 'white'
+            }}
+          />
+        ) : (
+          <Box sx={{ textAlign: 'center' }}>
+            <Box
+              component="img"
+              src={previewDialog.src}
+              alt={previewDialog.name || 'Vista previa'}
+              sx={{
+                maxWidth: '100%',
+                maxHeight: { xs: '60vh', md: '70vh' },
+                borderRadius: 2,
+                border: '2px solid #1a1a1a'
+              }}
+            />
+          </Box>
+        )}
+      </DialogContent>
+      <DialogActions sx={{ p: 2 }}>
+        <Button
+          href={previewDialog.src}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ color: '#1a237e' }}
+        >
+          Abrir en pestaña nueva
+        </Button>
+        <Button
+          variant="contained"
+          onClick={closePreview}
+          sx={{
+            bgcolor: '#1a237e',
+            border: '2px solid #1a1a1a',
+            '&:hover': { bgcolor: '#0d1442' }
+          }}
+        >
+          Cerrar
+        </Button>
+      </DialogActions>
+    </Dialog>
+  )
 
   const handleAddEducation = async () => {
     if (!canEdit) {
       toast.error('El plazo para modificar datos ha expirado')
       return
     }
-    
+
     if (!newEducation.institution || !newEducation.career_name) {
       toast.error('Institución y carrera son requeridos')
       return
@@ -113,32 +251,39 @@ const StudyForm = ({ profile, onUpdate }) => {
           institution_address: newEducation.institution_address,
           institution_map_link: newEducation.institution_map_link
         })
-        
+
+        // Si al editar se eligió un horario nuevo, se sube ahora. Antes
+        // esta rama nunca subía el archivo: solo lo hacía la de "agregar".
+        if (newEducation.schedule_file) {
+          const scheduleFormData = new FormData()
+          scheduleFormData.append('schedule_file', newEducation.schedule_file)
+          await beneficiaryService.uploadSchedule(editingEducation.id, scheduleFormData)
+        }
+
         toast.success('¡Estudio actualizado exitosamente! 🎓')
       } else {
         const response = await beneficiaryService.addEducation(profile.id, newEducation)
-        
+
         if (newEducation.schedule_file) {
-          const educationId = response?.data?.id || response?.data?.data?.id
-          
+          const educationId = response?.data?.data?.id || response?.data?.id
+
           if (educationId) {
-            const formData = new FormData()
-            formData.append('schedule_file', newEducation.schedule_file)
-            
-            await beneficiaryService.uploadSchedule(educationId, formData)
+            const scheduleFormData = new FormData()
+            scheduleFormData.append('schedule_file', newEducation.schedule_file)
+            await beneficiaryService.uploadSchedule(educationId, scheduleFormData)
           }
         }
-        
+
         toast.success(`¡${newEducation.career_name} agregado! 🎓`)
       }
-      
-      resetForm()
-      
+
+      // Se espera a que el perfil se recargue con los datos frescos ANTES
+      // de resetear el formulario y volver a la vista de tarjetas. Con
+      // esto la lista de estudios (y el horario recién subido) ya están
+      // actualizados en el momento en que se cierra el formulario.
       if (onUpdate) await onUpdate()
-      
-      const updatedProfile = await beneficiaryService.getMyProfile()
-      setEducationProfiles(updatedProfile?.educationProfiles || [])
-      
+
+      resetForm()
     } catch (error) {
       console.error('❌ Error:', error)
       toast.error(error.response?.data?.error || 'Error al guardar estudio')
@@ -148,6 +293,7 @@ const StudyForm = ({ profile, onUpdate }) => {
   }
 
   const resetForm = () => {
+    clearSelectedSchedule()
     setNewEducation({
       institution: '',
       career_name: '',
@@ -156,7 +302,6 @@ const StudyForm = ({ profile, onUpdate }) => {
       institution_map_link: '',
       schedule_file: null
     })
-    setSchedulePreview(null)
     setEditingEducation(null)
     setIsEditing(false)
   }
@@ -166,7 +311,8 @@ const StudyForm = ({ profile, onUpdate }) => {
       toast.error('El plazo para modificar datos ha expirado')
       return
     }
-    
+
+    clearSelectedSchedule()
     setEditingEducation(education)
     setNewEducation({
       institution: education.institution || '',
@@ -184,22 +330,22 @@ const StudyForm = ({ profile, onUpdate }) => {
       toast.error('El plazo para modificar datos ha expirado')
       return
     }
-    
+
     setEducationToDelete(education)
     setDeleteDialogOpen(true)
   }
 
   const confirmDelete = async () => {
     if (!educationToDelete || !canEdit) return
-    
+
     try {
       await beneficiaryService.deleteEducation(educationToDelete.id)
-      
+
       toast.success('Estudio eliminado exitosamente')
-      
+
       const updatedList = educationProfiles.filter(e => e.id !== educationToDelete.id)
       setEducationProfiles(updatedList)
-      
+
       if (onUpdate) await onUpdate()
     } catch (error) {
       console.error('❌ Error al eliminar:', error)
@@ -210,11 +356,44 @@ const StudyForm = ({ profile, onUpdate }) => {
     }
   }
 
-  // Vista estática
-  if (!isEditing && educationProfiles.length > 0) {
+  const hasProfiles = educationProfiles.length > 0
+
+  // Encabezado + banner de plazo, compartidos por las dos vistas de solo lectura.
+  const readOnlyHeader = (
+    <>
+      <Typography variant="h5" gutterBottom sx={{
+        color: '#1a237e',
+        fontWeight: 700,
+        fontFamily: 'Playfair Display',
+        mb: 3
+      }}>
+        <School sx={{ mr: 1, verticalAlign: 'middle' }} />
+        Estudios Superiores
+      </Typography>
+
+      {!canEdit && (
+        <Alert
+          severity="warning"
+          icon={<Lock />}
+          sx={{
+            mb: 3,
+            border: '2px solid #1a1a1a',
+            borderRadius: 2
+          }}
+        >
+          El plazo para modificar datos ha expirado
+        </Alert>
+      )}
+    </>
+  )
+
+  // Vista vacía: aún no hay ningún estudio registrado. Antes, en este
+  // caso, "cerrar" el formulario devolvía otra vez al mismo formulario
+  // vacío porque no había una vista de solo lectura a la que volver.
+  if (!isEditing && !hasProfiles) {
     return (
-      <Paper sx={{ 
-        p: { xs: 2, sm: 3, md: 4 }, 
+      <Paper sx={{
+        p: { xs: 2, sm: 3, md: 4 },
         maxWidth: 700,
         mx: 'auto',
         border: '3px solid #1a1a1a',
@@ -222,30 +401,49 @@ const StudyForm = ({ profile, onUpdate }) => {
         boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
         bgcolor: '#fffdf9'
       }}>
-        <Typography variant="h5" gutterBottom sx={{ 
-          color: '#1a237e', 
-          fontWeight: 700,
-          fontFamily: 'Playfair Display',
-          mb: 3
-        }}>
-          <School sx={{ mr: 1, verticalAlign: 'middle' }} />
-          Estudios Superiores
+        {readOnlyHeader}
+
+        <Typography color="text.secondary" sx={{ mb: 3 }}>
+          Todavía no registraste ningún estudio.
         </Typography>
 
-        {!canEdit && (
-          <Alert 
-            severity="warning" 
-            icon={<Lock />}
-            sx={{ 
-              mb: 3,
-              border: '2px solid #1a1a1a',
-              borderRadius: 2
-            }}
-          >
-            El plazo para modificar datos ha expirado
-          </Alert>
-        )}
-        
+        <Button
+          variant="contained"
+          startIcon={canEdit ? <Add /> : <Lock />}
+          onClick={() => {
+            resetForm()
+            setIsEditing(true)
+          }}
+          disabled={!canEdit}
+          sx={{
+            bgcolor: canEdit ? '#1a237e' : '#9e9e9e',
+            border: '2px solid #1a1a1a',
+            boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
+            '&:hover': {
+              bgcolor: canEdit ? '#0d1442' : '#9e9e9e'
+            }
+          }}
+        >
+          {canEdit ? 'Agregar Estudio' : 'Plazo Expirado'}
+        </Button>
+      </Paper>
+    )
+  }
+
+  // Vista estática con tarjetas
+  if (!isEditing && hasProfiles) {
+    return (
+      <Paper sx={{
+        p: { xs: 2, sm: 3, md: 4 },
+        maxWidth: 700,
+        mx: 'auto',
+        border: '3px solid #1a1a1a',
+        borderRadius: 4,
+        boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
+        bgcolor: '#fffdf9'
+      }}>
+        {readOnlyHeader}
+
         <Box sx={{ mt: 3 }}>
           <AnimatePresence>
             {educationProfiles.map((education, index) => (
@@ -274,9 +472,9 @@ const StudyForm = ({ profile, onUpdate }) => {
                   }}
                 >
                   {canEdit && (
-                    <Box 
+                    <Box
                       className="action-buttons"
-                      sx={{ 
+                      sx={{
                         position: 'absolute',
                         top: 8,
                         right: 8,
@@ -336,9 +534,9 @@ const StudyForm = ({ profile, onUpdate }) => {
                         <School />
                       </Avatar>
                       <Box sx={{ flex: 1, pr: canEdit ? 8 : 0 }}>
-                        <Typography variant="h6" sx={{ 
-                          fontWeight: 700, 
-                          color: '#1a237e', 
+                        <Typography variant="h6" sx={{
+                          fontWeight: 700,
+                          color: '#1a237e',
                           fontFamily: 'Playfair Display'
                         }}>
                           {education.career_name}
@@ -350,7 +548,7 @@ const StudyForm = ({ profile, onUpdate }) => {
                     </Box>
 
                     {education.year_semester && (
-                      <Typography variant="caption" sx={{ 
+                      <Typography variant="caption" sx={{
                         display: 'inline-block',
                         bgcolor: '#f0f7ff',
                         px: 1.5,
@@ -385,7 +583,7 @@ const StudyForm = ({ profile, onUpdate }) => {
                               href={education.institution_map_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              sx={{ 
+                              sx={{
                                 border: '2px solid #1a1a1a',
                                 boxShadow: '2px 2px 0px rgba(26,26,26,0.15)'
                               }}
@@ -401,10 +599,9 @@ const StudyForm = ({ profile, onUpdate }) => {
                               fullWidth
                               variant="outlined"
                               size="small"
-                              startIcon={education.schedule_file.endsWith('.pdf') ? <Description /> : <Visibility />}
-                              href={`${UPLOADS_URL}/uploads/schedules/${education.schedule_file}`}
-                              target="_blank"
-                              sx={{ 
+                              startIcon={education.schedule_file.toLowerCase().endsWith('.pdf') ? <Description /> : <Visibility />}
+                              onClick={() => handleViewSavedSchedule(education)}
+                              sx={{
                                 border: '2px solid #1a1a1a',
                                 boxShadow: '2px 2px 0px rgba(26,26,26,0.15)'
                               }}
@@ -430,7 +627,7 @@ const StudyForm = ({ profile, onUpdate }) => {
             setIsEditing(true)
           }}
           disabled={!canEdit}
-          sx={{ 
+          sx={{
             mt: 3,
             bgcolor: canEdit ? '#1a237e' : '#9e9e9e',
             border: '2px solid #1a1a1a',
@@ -467,7 +664,7 @@ const StudyForm = ({ profile, onUpdate }) => {
             <Button onClick={() => setDeleteDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button 
+            <Button
               onClick={confirmDelete}
               variant="contained"
               sx={{
@@ -479,14 +676,16 @@ const StudyForm = ({ profile, onUpdate }) => {
             </Button>
           </DialogActions>
         </Dialog>
+
+        {previewModal}
       </Paper>
     )
   }
 
   // Vista de edición/crear
   return (
-    <Paper sx={{ 
-      p: { xs: 2, sm: 3, md: 4 }, 
+    <Paper sx={{
+      p: { xs: 2, sm: 3, md: 4 },
       maxWidth: 700,
       mx: 'auto',
       border: '3px solid #1a1a1a',
@@ -495,15 +694,15 @@ const StudyForm = ({ profile, onUpdate }) => {
       bgcolor: '#fffdf9'
     }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5" sx={{ 
-          color: '#1a237e', 
+        <Typography variant="h5" sx={{
+          color: '#1a237e',
           fontWeight: 700,
           fontFamily: 'Playfair Display'
         }}>
           <School sx={{ mr: 1, verticalAlign: 'middle' }} />
           {editingEducation ? 'Editar Estudio' : 'Agregar Nuevo Estudio'}
         </Typography>
-        <IconButton onClick={resetForm}>
+        <IconButton onClick={resetForm} disabled={loading}>
           <Close />
         </IconButton>
       </Box>
@@ -523,7 +722,7 @@ const StudyForm = ({ profile, onUpdate }) => {
               fullWidth
               label="Universidad/Instituto"
               value={newEducation.institution}
-              onChange={(e) => setNewEducation({...newEducation, institution: e.target.value})}
+              onChange={(e) => setNewEducation({ ...newEducation, institution: e.target.value })}
               required
               placeholder="Ej: Universidad Nacional"
               InputProps={{
@@ -535,35 +734,35 @@ const StudyForm = ({ profile, onUpdate }) => {
               }}
             />
           </Grid>
-          
+
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Carrera de Estudios"
               value={newEducation.career_name}
-              onChange={(e) => setNewEducation({...newEducation, career_name: e.target.value})}
+              onChange={(e) => setNewEducation({ ...newEducation, career_name: e.target.value })}
               required
               placeholder="Ej: Ingeniería Civil"
             />
           </Grid>
-          
+
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Año/Semestre de Estudio"
               value={newEducation.year_semester}
-              onChange={(e) => setNewEducation({...newEducation, year_semester: e.target.value})}
+              onChange={(e) => setNewEducation({ ...newEducation, year_semester: e.target.value })}
               placeholder="Ej: 2do Año - 4to Semestre"
               helperText="Puedes escribir libremente"
             />
           </Grid>
-          
+
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Dirección del Centro de Estudios"
               value={newEducation.institution_address}
-              onChange={(e) => setNewEducation({...newEducation, institution_address: e.target.value})}
+              onChange={(e) => setNewEducation({ ...newEducation, institution_address: e.target.value })}
               placeholder="Ej: Av. Principal 123"
               InputProps={{
                 startAdornment: (
@@ -574,13 +773,13 @@ const StudyForm = ({ profile, onUpdate }) => {
               }}
             />
           </Grid>
-          
+
           <Grid item xs={12}>
             <TextField
               fullWidth
               label="Link de la Dirección (Google Maps)"
               value={newEducation.institution_map_link}
-              onChange={(e) => setNewEducation({...newEducation, institution_map_link: e.target.value})}
+              onChange={(e) => setNewEducation({ ...newEducation, institution_map_link: e.target.value })}
               placeholder="https://maps.google.com/..."
               InputProps={{
                 startAdornment: (
@@ -591,20 +790,22 @@ const StudyForm = ({ profile, onUpdate }) => {
               }}
             />
           </Grid>
-          
+
           <Grid item xs={12}>
             <Button
               variant="outlined"
               component="label"
               startIcon={<Schedule />}
               disabled={!canEdit}
-              sx={{ 
+              sx={{
                 mr: 2,
                 border: '2px solid #1a1a1a',
                 boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
               }}
             >
-              Subir Horario (PDF/Imagen)
+              {editingEducation && editingEducation.schedule_file
+                ? 'Reemplazar Horario (PDF/Imagen)'
+                : 'Subir Horario (PDF/Imagen)'}
               <input
                 type="file"
                 hidden
@@ -613,60 +814,89 @@ const StudyForm = ({ profile, onUpdate }) => {
                 disabled={!canEdit}
               />
             </Button>
-            
+
+            {editingEducation?.schedule_file && !newEducation.schedule_file && (
+              <Box sx={{ mt: 2 }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  startIcon={editingEducation.schedule_file.toLowerCase().endsWith('.pdf') ? <Description /> : <Visibility />}
+                  onClick={() => handleViewSavedSchedule(editingEducation)}
+                  sx={{ color: '#1a237e' }}
+                >
+                  Ver horario actual
+                </Button>
+              </Box>
+            )}
+
+            {newEducation.schedule_file && (
+              <Typography variant="caption" sx={{ display: 'block', mt: 1, color: 'text.secondary' }}>
+                Haz clic sobre el archivo para verlo antes de guardarlo.
+              </Typography>
+            )}
+
             {schedulePreview && schedulePreview !== 'pdf' && (
               <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
-                <img 
-                  src={schedulePreview} 
-                  alt="Vista previa" 
-                  style={{ 
-                    maxWidth: 200, 
-                    maxHeight: 200, 
+                <img
+                  src={schedulePreview}
+                  alt="Vista previa"
+                  style={{
+                    maxWidth: 200,
+                    maxHeight: 200,
                     borderRadius: 8,
                     border: '2px solid #1a1a1a',
                     cursor: 'pointer'
                   }}
-                  onClick={() => window.open(schedulePreview, '_blank')}
+                  onClick={handlePreviewSelectedSchedule}
                 />
                 <IconButton
                   size="small"
-                  sx={{ 
-                    position: 'absolute', 
-                    top: -10, 
+                  sx={{
+                    position: 'absolute',
+                    top: -10,
                     right: -10,
                     bgcolor: 'white',
                     border: '2px solid #1a1a1a'
                   }}
-                  onClick={() => {
-                    setSchedulePreview(null)
-                    setNewEducation({...newEducation, schedule_file: null})
-                  }}
+                  onClick={clearSelectedSchedule}
                 >
                   ✕
                 </IconButton>
               </Box>
             )}
-            
+
             {schedulePreview === 'pdf' && newEducation.schedule_file && (
-              <Box sx={{ 
-                mt: 2, 
-                p: 2, 
-                border: '2px solid #1a1a1a',
-                borderRadius: 2,
-                display: 'inline-flex',
-                alignItems: 'center',
-                cursor: 'pointer',
-                bgcolor: '#faf8f3'
-              }}
-              onClick={() => {
-                const url = URL.createObjectURL(newEducation.schedule_file)
-                window.open(url, '_blank')
-              }}
-              >
-                <Description sx={{ mr: 1, color: '#ff6b00' }} />
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  {newEducation.schedule_file.name}
-                </Typography>
+              <Box sx={{ mt: 2, position: 'relative', display: 'inline-block' }}>
+                <Box
+                  sx={{
+                    p: 2,
+                    border: '2px solid #1a1a1a',
+                    borderRadius: 2,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    cursor: 'pointer',
+                    bgcolor: '#faf8f3'
+                  }}
+                  onClick={handlePreviewSelectedSchedule}
+                >
+                  <Description sx={{ mr: 1, color: '#ff6b00' }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {newEducation.schedule_file.name}
+                  </Typography>
+                </Box>
+                <IconButton
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    top: -10,
+                    right: -10,
+                    bgcolor: 'white',
+                    border: '2px solid #1a1a1a'
+                  }}
+                  onClick={clearSelectedSchedule}
+                >
+                  ✕
+                </IconButton>
               </Box>
             )}
           </Grid>
@@ -678,7 +908,7 @@ const StudyForm = ({ profile, onUpdate }) => {
             startIcon={<Save />}
             onClick={handleAddEducation}
             disabled={loading || !canEdit}
-            sx={{ 
+            sx={{
               flex: 1,
               minWidth: 200,
               bgcolor: '#1a237e',
@@ -694,6 +924,7 @@ const StudyForm = ({ profile, onUpdate }) => {
           <Button
             variant="outlined"
             onClick={resetForm}
+            disabled={loading}
             sx={{
               border: '2px solid #1a1a1a',
               boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
@@ -703,6 +934,8 @@ const StudyForm = ({ profile, onUpdate }) => {
           </Button>
         </Box>
       </Box>
+
+      {previewModal}
     </Paper>
   )
 }

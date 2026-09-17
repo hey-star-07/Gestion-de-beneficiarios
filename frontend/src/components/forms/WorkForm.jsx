@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import {
   Box,
@@ -38,6 +38,20 @@ const WorkForm = ({ profile, onUpdate }) => {
   })
   const [loading, setLoading] = useState(false)
 
+  // Resincroniza el formulario cuando el perfil se recarga desde el backend.
+  // Sin esto, el estado inicial quedaba "congelado" y al volver a entrar en
+  // modo edición se mostraban los valores viejos.
+  // Solo se aplica fuera del modo edición para no pisar lo que la usuaria
+  // está escribiendo en ese momento.
+  useEffect(() => {
+    if (isEditing) return
+    setFormData({
+      is_working: profile?.is_working || false,
+      workplace: profile?.workplace || '',
+      work_phone: profile?.work_phone || ''
+    })
+  }, [profile, isEditing])
+
   const handleChange = (e) => {
     const { name, value } = e.target
     setFormData({
@@ -48,21 +62,24 @@ const WorkForm = ({ profile, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!canEdit) {
       toast.error('El plazo para modificar datos ha expirado')
       return
     }
-    
+
     setLoading(true)
 
     try {
+      // Solo se envían los campos de trabajo. El backend ahora hace un
+      // UPDATE parcial, así que los datos de iglesia no se tocan.
+      // El `null` explícito cuando no trabaja sí limpia los campos.
       const dataToSend = {
         is_working: formData.is_working,
-        workplace: formData.is_working ? formData.workplace : null,
-        work_phone: formData.is_working ? formData.work_phone : null
+        workplace: formData.is_working ? (formData.workplace || null) : null,
+        work_phone: formData.is_working ? (formData.work_phone || null) : null
       }
-      
+
       await beneficiaryService.updateMyProfile(dataToSend)
       toast.success('¡Información laboral guardada! 💼')
       // Esperamos a que el perfil se recargue con los datos frescos ANTES
@@ -71,16 +88,26 @@ const WorkForm = ({ profile, onUpdate }) => {
       setIsEditing(false)
     } catch (error) {
       console.error('❌ Error:', error)
-      toast.error('Error al guardar la información')
+      toast.error(error.response?.data?.error || 'Error al guardar la información')
     } finally {
       setLoading(false)
     }
   }
 
+  const handleCancel = () => {
+    // Descarta los cambios no guardados y vuelve a los datos del perfil.
+    setFormData({
+      is_working: profile?.is_working || false,
+      workplace: profile?.workplace || '',
+      work_phone: profile?.work_phone || ''
+    })
+    setIsEditing(false)
+  }
+
   if (!isEditing) {
     return (
-      <Paper sx={{ 
-        p: { xs: 2, sm: 3, md: 4 }, 
+      <Paper sx={{
+        p: { xs: 2, sm: 3, md: 4 },
         maxWidth: 700,
         mx: 'auto',
         border: '3px solid #1a1a1a',
@@ -88,8 +115,8 @@ const WorkForm = ({ profile, onUpdate }) => {
         boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
         bgcolor: '#fffdf9'
       }}>
-        <Typography variant="h5" gutterBottom sx={{ 
-          color: '#1a237e', 
+        <Typography variant="h5" gutterBottom sx={{
+          color: '#1a237e',
           fontWeight: 700,
           fontFamily: 'Playfair Display',
           mb: 3
@@ -97,7 +124,7 @@ const WorkForm = ({ profile, onUpdate }) => {
           <Work sx={{ mr: 1, verticalAlign: 'middle' }} />
           Información Laboral
         </Typography>
-        
+
         <Box sx={{ mt: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="body1" sx={{ mr: 1, fontFamily: 'Playfair Display' }}>
@@ -109,30 +136,26 @@ const WorkForm = ({ profile, onUpdate }) => {
               <Cancel sx={{ color: '#ff1744' }} />
             )}
           </Box>
-          
+
           {profile?.is_working && (
             <>
-              {profile?.workplace && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                  <Business sx={{ mr: 1, color: '#1a237e' }} />
-                  <Typography>{profile.workplace}</Typography>
-                </Box>
-              )}
-              {profile?.work_phone && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
-                  <Phone sx={{ mr: 1, color: '#1a237e' }} />
-                  <Typography>{profile.work_phone}</Typography>
-                </Box>
-              )}
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                <Business sx={{ mr: 1, color: '#1a237e' }} />
+                <Typography>{profile?.workplace || 'No especificado'}</Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                <Phone sx={{ mr: 1, color: '#1a237e' }} />
+                <Typography>{profile?.work_phone || 'No especificado'}</Typography>
+              </Box>
             </>
           )}
         </Box>
 
         {!canEdit && (
-          <Alert 
-            severity="warning" 
+          <Alert
+            severity="warning"
             icon={<Lock />}
-            sx={{ 
+            sx={{
               mt: 3,
               border: '2px solid #1a1a1a',
               borderRadius: 2
@@ -147,7 +170,7 @@ const WorkForm = ({ profile, onUpdate }) => {
           startIcon={canEdit ? <Edit /> : <Lock />}
           onClick={() => setIsEditing(true)}
           disabled={!canEdit}
-          sx={{ 
+          sx={{
             mt: 3,
             bgcolor: canEdit ? '#1a237e' : '#9e9e9e',
             border: '2px solid #1a1a1a',
@@ -164,8 +187,8 @@ const WorkForm = ({ profile, onUpdate }) => {
   }
 
   return (
-    <Paper sx={{ 
-      p: { xs: 2, sm: 3, md: 4 }, 
+    <Paper sx={{
+      p: { xs: 2, sm: 3, md: 4 },
       maxWidth: 700,
       mx: 'auto',
       border: '3px solid #1a1a1a',
@@ -173,8 +196,8 @@ const WorkForm = ({ profile, onUpdate }) => {
       boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
       bgcolor: '#fffdf9'
     }}>
-      <Typography variant="h5" gutterBottom sx={{ 
-        color: '#1a237e', 
+      <Typography variant="h5" gutterBottom sx={{
+        color: '#1a237e',
         fontWeight: 700,
         fontFamily: 'Playfair Display',
         mb: 3
@@ -182,7 +205,7 @@ const WorkForm = ({ profile, onUpdate }) => {
         <Work sx={{ mr: 1, verticalAlign: 'middle' }} />
         Actualizar Información Laboral
       </Typography>
-      
+
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           <Grid item xs={12}>
@@ -193,7 +216,7 @@ const WorkForm = ({ profile, onUpdate }) => {
               <RadioGroup
                 name="is_working"
                 value={formData.is_working}
-                onChange={(e) => setFormData({...formData, is_working: e.target.value === 'true'})}
+                onChange={(e) => setFormData({ ...formData, is_working: e.target.value === 'true' })}
                 row
               >
                 <FormControlLabel value={true} control={<Radio />} label="Sí" />
@@ -201,7 +224,7 @@ const WorkForm = ({ profile, onUpdate }) => {
               </RadioGroup>
             </FormControl>
           </Grid>
-          
+
           {formData.is_working && (
             <>
               <Grid item xs={12}>
@@ -221,7 +244,7 @@ const WorkForm = ({ profile, onUpdate }) => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -249,7 +272,7 @@ const WorkForm = ({ profile, onUpdate }) => {
             variant="contained"
             startIcon={<Save />}
             disabled={loading || !canEdit}
-            sx={{ 
+            sx={{
               flex: 1,
               minWidth: 200,
               bgcolor: '#1a237e',
@@ -264,7 +287,8 @@ const WorkForm = ({ profile, onUpdate }) => {
           </Button>
           <Button
             variant="outlined"
-            onClick={() => setIsEditing(false)}
+            onClick={handleCancel}
+            disabled={loading}
             sx={{
               border: '2px solid #1a1a1a',
               boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'

@@ -96,21 +96,37 @@ class BeneficiaryController {
 
   async update(req, res) {
     try {
+      const b = req.body;
+      const updateData = {
+        firstName: b.first_name ?? b.firstName,
+        lastName: b.last_name ?? b.lastName,
+        address: b.address,
+        mapLink: b.map_link ?? b.mapLink,
+        phone: b.phone,
+        familyMembersCount: b.family_members_count ?? b.familyMembersCount,
+        croquisFile: b.croquis_file ?? b.croquisFile,
+        churchAttendance: b.church_attendance ?? b.churchAttendance,
+        isBaptized: b.is_baptized ?? b.isBaptized,
+        churchName: b.church_name ?? b.churchName,
+        pastorName: b.pastor_name ?? b.pastorName,
+        pastorPhone: b.pastor_phone ?? b.pastorPhone,
+        isWorking: b.is_working ?? b.isWorking,
+        workplace: b.workplace,
+        workPhone: b.work_phone ?? b.workPhone
+      };
+
       const beneficiary = await beneficiaryService.updateBeneficiary(
         req.params.id,
-        req.body
+        updateData
       );
-      
+
       res.json({
         success: true,
         message: 'Beneficiario actualizado exitosamente',
         data: beneficiary
       });
     } catch (error) {
-      res.status(400).json({ 
-        success: false,
-        error: error.message 
-      });
+      res.status(400).json({ success: false, error: error.message });
     }
   }
 

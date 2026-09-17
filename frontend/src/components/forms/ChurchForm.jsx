@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { toast } from 'react-hot-toast'
 import {
   Box,
@@ -12,7 +12,6 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
-  InputAdornment,
   Alert
 } from '@mui/material'
 import {
@@ -40,6 +39,22 @@ const ChurchForm = ({ profile, onUpdate }) => {
   })
   const [loading, setLoading] = useState(false)
 
+  // Resincroniza el formulario cuando el perfil se recarga desde el backend.
+  // Sin esto, el estado inicial quedaba "congelado" y al volver a entrar en
+  // modo edición se mostraban los valores viejos.
+  // Solo se aplica fuera del modo edición para no pisar lo que la usuaria
+  // está escribiendo en ese momento.
+  useEffect(() => {
+    if (isEditing) return
+    setFormData({
+      church_attendance: profile?.church_attendance || false,
+      is_baptized: profile?.is_baptized || false,
+      church_name: profile?.church_name || '',
+      pastor_name: profile?.pastor_name || '',
+      pastor_phone: profile?.pastor_phone || ''
+    })
+  }, [profile, isEditing])
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
@@ -49,23 +64,26 @@ const ChurchForm = ({ profile, onUpdate }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    
+
     if (!canEdit) {
       toast.error('El plazo para modificar datos ha expirado')
       return
     }
-    
+
     setLoading(true)
 
     try {
+      // Solo se envían los campos de iglesia. El backend ahora hace un
+      // UPDATE parcial, así que los datos de trabajo no se tocan.
+      // El `null` explícito cuando no asiste sí limpia los campos.
       const dataToSend = {
         church_attendance: formData.church_attendance,
         is_baptized: formData.is_baptized,
-        church_name: formData.church_attendance ? formData.church_name : null,
-        pastor_name: formData.church_attendance ? formData.pastor_name : null,
-        pastor_phone: formData.church_attendance ? formData.pastor_phone : null
+        church_name: formData.church_attendance ? (formData.church_name || null) : null,
+        pastor_name: formData.church_attendance ? (formData.pastor_name || null) : null,
+        pastor_phone: formData.church_attendance ? (formData.pastor_phone || null) : null
       }
-      
+
       await beneficiaryService.updateMyProfile(dataToSend)
       toast.success('¡Información de iglesia guardada! ⛪')
       // Esperamos a que el perfil se recargue con los datos frescos ANTES
@@ -81,10 +99,22 @@ const ChurchForm = ({ profile, onUpdate }) => {
     }
   }
 
+  const handleCancel = () => {
+    // Descarta los cambios no guardados y vuelve a los datos del perfil.
+    setFormData({
+      church_attendance: profile?.church_attendance || false,
+      is_baptized: profile?.is_baptized || false,
+      church_name: profile?.church_name || '',
+      pastor_name: profile?.pastor_name || '',
+      pastor_phone: profile?.pastor_phone || ''
+    })
+    setIsEditing(false)
+  }
+
   if (!isEditing) {
     return (
-      <Paper sx={{ 
-        p: { xs: 2, sm: 3, md: 4 }, 
+      <Paper sx={{
+        p: { xs: 2, sm: 3, md: 4 },
         maxWidth: 700,
         mx: 'auto',
         border: '3px solid #1a1a1a',
@@ -92,8 +122,8 @@ const ChurchForm = ({ profile, onUpdate }) => {
         boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
         bgcolor: '#fffdf9'
       }}>
-        <Typography variant="h5" gutterBottom sx={{ 
-          color: '#1a237e', 
+        <Typography variant="h5" gutterBottom sx={{
+          color: '#1a237e',
           fontWeight: 700,
           fontFamily: 'Playfair Display',
           mb: 3
@@ -101,7 +131,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
           <Church sx={{ mr: 1, verticalAlign: 'middle' }} />
           Información de la Iglesia
         </Typography>
-        
+
         <Box sx={{ mt: 3 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="body1" sx={{ mr: 1 }}>
@@ -113,7 +143,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
               <Cancel sx={{ color: '#ff1744' }} />
             )}
           </Box>
-          
+
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Typography variant="body1" sx={{ mr: 1 }}>
               <strong>Está bautizado:</strong>
@@ -125,28 +155,26 @@ const ChurchForm = ({ profile, onUpdate }) => {
             )}
           </Box>
 
-          {profile?.church_name && (
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              <strong>Iglesia:</strong> {profile.church_name}
-            </Typography>
-          )}
-          {profile?.pastor_name && (
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              <strong>Pastor:</strong> {profile.pastor_name}
-            </Typography>
-          )}
-          {profile?.pastor_phone && (
-            <Typography variant="body1">
-              <strong>Contacto:</strong> {profile.pastor_phone}
-            </Typography>
+          {profile?.church_attendance && (
+            <>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                <strong>Iglesia:</strong> {profile?.church_name || 'No especificado'}
+              </Typography>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                <strong>Pastor:</strong> {profile?.pastor_name || 'No especificado'}
+              </Typography>
+              <Typography variant="body1">
+                <strong>Contacto:</strong> {profile?.pastor_phone || 'No especificado'}
+              </Typography>
+            </>
           )}
         </Box>
 
         {!canEdit && (
-          <Alert 
-            severity="warning" 
+          <Alert
+            severity="warning"
             icon={<Lock />}
-            sx={{ 
+            sx={{
               mt: 3,
               border: '2px solid #1a1a1a',
               borderRadius: 2
@@ -161,7 +189,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
           startIcon={canEdit ? <Edit /> : <Lock />}
           onClick={() => setIsEditing(true)}
           disabled={!canEdit}
-          sx={{ 
+          sx={{
             mt: 3,
             bgcolor: canEdit ? '#1a237e' : '#9e9e9e',
             border: '2px solid #1a1a1a',
@@ -178,8 +206,8 @@ const ChurchForm = ({ profile, onUpdate }) => {
   }
 
   return (
-    <Paper sx={{ 
-      p: { xs: 2, sm: 3, md: 4 }, 
+    <Paper sx={{
+      p: { xs: 2, sm: 3, md: 4 },
       maxWidth: 700,
       mx: 'auto',
       border: '3px solid #1a1a1a',
@@ -187,8 +215,8 @@ const ChurchForm = ({ profile, onUpdate }) => {
       boxShadow: '5px 5px 0px rgba(26,26,26,0.2)',
       bgcolor: '#fffdf9'
     }}>
-      <Typography variant="h5" gutterBottom sx={{ 
-        color: '#1a237e', 
+      <Typography variant="h5" gutterBottom sx={{
+        color: '#1a237e',
         fontWeight: 700,
         fontFamily: 'Playfair Display',
         mb: 3
@@ -196,7 +224,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
         <Church sx={{ mr: 1, verticalAlign: 'middle' }} />
         Actualizar Información de la Iglesia
       </Typography>
-      
+
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
           <Grid item xs={12}>
@@ -205,7 +233,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
               <RadioGroup
                 name="church_attendance"
                 value={formData.church_attendance}
-                onChange={(e) => setFormData({...formData, church_attendance: e.target.value === 'true'})}
+                onChange={(e) => setFormData({ ...formData, church_attendance: e.target.value === 'true' })}
                 row
               >
                 <FormControlLabel value={true} control={<Radio />} label="Sí" />
@@ -213,14 +241,14 @@ const ChurchForm = ({ profile, onUpdate }) => {
               </RadioGroup>
             </FormControl>
           </Grid>
-          
+
           <Grid item xs={12}>
             <FormControl component="fieldset">
               <FormLabel component="legend">¿Está bautizado?</FormLabel>
               <RadioGroup
                 name="is_baptized"
                 value={formData.is_baptized}
-                onChange={(e) => setFormData({...formData, is_baptized: e.target.value === 'true'})}
+                onChange={(e) => setFormData({ ...formData, is_baptized: e.target.value === 'true' })}
                 row
               >
                 <FormControlLabel value={true} control={<Radio />} label="Sí" />
@@ -228,7 +256,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
               </RadioGroup>
             </FormControl>
           </Grid>
-          
+
           {formData.church_attendance && (
             <>
               <Grid item xs={12}>
@@ -243,7 +271,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -256,7 +284,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
                   }}
                 />
               </Grid>
-              
+
               <Grid item xs={12}>
                 <TextField
                   fullWidth
@@ -279,7 +307,7 @@ const ChurchForm = ({ profile, onUpdate }) => {
             variant="contained"
             startIcon={<Save />}
             disabled={loading || !canEdit}
-            sx={{ 
+            sx={{
               flex: 1,
               minWidth: 200,
               bgcolor: '#1a237e',
@@ -294,7 +322,8 @@ const ChurchForm = ({ profile, onUpdate }) => {
           </Button>
           <Button
             variant="outlined"
-            onClick={() => setIsEditing(false)}
+            onClick={handleCancel}
+            disabled={loading}
             sx={{
               border: '2px solid #1a1a1a',
               boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
