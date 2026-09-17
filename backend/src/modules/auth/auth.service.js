@@ -5,6 +5,7 @@ const crypto = require('crypto');
 const authConfig = require('../../config/auth');
 const emailService = require('../../utils/email.service');
 const db = require('../../config/database');
+const SettingService = require('../settings/setting.service');
 
 class AuthService {
   async register(userData) {
@@ -37,6 +38,19 @@ class AuthService {
     
     // Generar username desde el email
     const username = email.split('@')[0];
+
+    // Si el plazo para modificar datos ya venció, un beneficiario que
+    // recién se registra debe nacer deshabilitado para editar — de lo
+    // contrario, al ser una cuenta nueva, is_active empezaría en true y
+    // podría agregar/editar datos aunque el plazo ya haya expirado.
+    // Esto no aplica a cuentas ADMIN.
+    let isActive = true;
+    if (role !== 'ADMIN') {
+      const deadlineInfo = await SettingService.getDataSubmissionDeadline();
+      if (deadlineInfo.isActive && deadlineInfo.isExpired) {
+        isActive = false;
+      }
+    }
     
     // Crear beneficiario primero
     const beneficiaryResult = await db.query(
@@ -56,7 +70,8 @@ class AuthService {
       role,
       verificationCode,
       verificationCodeExpires,
-      beneficiaryId: beneficiary.id
+      beneficiaryId: beneficiary.id,
+      isActive
     });
     
     // Enviar email de verificación
@@ -82,6 +97,36 @@ class AuthService {
       [code]
     );
     return result.rows[0];
+  }
+
+  /**
+   * Genera un nuevo código de verificación y lo reenvía por correo.
+   * Antes esto era un botón que no hacía nada ("funcionalidad en
+   * desarrollo"); ahora sí actualiza el código en la BD y reenvía el email,
+   * igual que el flujo de "olvidé mi contraseña".
+   */
+  async resendVerificationCode(email) {
+    const user = await AuthModel.findByEmail(email);
+
+    if (!user) {
+      throw new Error('No existe una cuenta con este email');
+    }
+
+    if (user.is_verified) {
+      throw new Error('Este email ya está verificado. Puedes iniciar sesión');
+    }
+
+    const verificationCode = crypto.randomBytes(3).toString('hex').toUpperCase();
+    const verificationCodeExpires = new Date(Date.now() + 15 * 60 * 1000);
+
+    await db.query(
+      'UPDATE users SET verification_code = $1, verification_code_expires = $2 WHERE id = $3',
+      [verificationCode, verificationCodeExpires, user.id]
+    );
+
+    await emailService.sendVerificationEmail(email, verificationCode);
+
+    return { message: 'Código de verificación reenviado a tu email' };
   }
 
   async verifyEmail(email, code) {

@@ -97,14 +97,22 @@ const FamilyForm = ({ profile, onUpdate }) => {
         
         toast.success(`¡${newMember.full_name} agregado! 👨‍👩‍👧‍👦`)
       }
-      
-      resetForm()
-      
-      if (onUpdate) await onUpdate()
-      
+
       const updatedProfile = await beneficiaryService.getMyProfile()
+
+      // IMPORTANTE: setFamilyMembers y resetForm (que pone isEditing en
+      // false) se llaman juntos, sin ningún await entre medio, para que
+      // ambos se apliquen en el MISMO render. Antes resetForm() se
+      // llamaba primero y esta actualización después: como la vista
+      // estática solo se muestra cuando `!isEditing && familyMembers.length
+      // > 0`, si familyMembers todavía estaba vacío en ese primer render
+      // (por ejemplo al agregar el primer familiar), la condición fallaba
+      // y el formulario — ya vacío por resetForm() — se quedaba abierto,
+      // pareciendo "trabado" sin dejar ver la tarjeta ni cerrar.
       setFamilyMembers(updatedProfile?.familyMembers || [])
-      
+      resetForm()
+
+      if (onUpdate) await onUpdate()
     } catch (error) {
       console.error('❌ Error:', error)
       toast.error(error.response?.data?.error || 'Error al guardar familiar')

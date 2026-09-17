@@ -90,6 +90,23 @@ class UserModel {
     return result.rows;
   }
 
+  /**
+   * Rehabilita a TODOS los usuarios con rol USER (beneficiarios).
+   * Se usa cuando el admin elimina la fecha límite: al no haber plazo,
+   * no tiene sentido que sigan deshabilitados. Nunca toca a los ADMIN.
+   */
+  async reactivateAllBeneficiaries() {
+    const result = await db.query(
+      `UPDATE users
+       SET is_active = true,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE role = 'USER' AND is_active = false
+       RETURNING id`
+    );
+
+    return result.rows;
+  }
+
   async list(filters = {}) {
     let query = `
       SELECT id, email, username, role, beneficiary_id, is_verified, is_active, created_at, last_login

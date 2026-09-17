@@ -12,10 +12,10 @@ let appliedForDeadline = null;
 class SettingService {
   /**
    * Si la fecha límite ya venció y todavía no se aplicó la desactivación
-   * automática para ESA fecha, deshabilita a todos los beneficiarios.
+   * automática para ESA fecha, deshabilita a todos los patrocinados.
    *
    * Es idempotente: se ejecuta una sola vez por cada fecha límite. Así, si
-   * el admin vuelve a habilitar a un beneficiario después del vencimiento,
+   * el admin vuelve a habilitar a un patrocinado después del vencimiento,
    * no se lo vuelve a deshabilitar en la siguiente llamada.
    */
   async applyDeadlineExpiryIfNeeded() {
@@ -50,7 +50,7 @@ class SettingService {
 
     appliedForDeadline = deadlineValue;
 
-    console.log(`⏰ Plazo vencido: ${disabled.length} beneficiario(s) deshabilitado(s) automáticamente`);
+    console.log(`⏰ Plazo vencido: ${disabled.length} patrocinado(s) deshabilitado(s) automáticamente`);
   }
 
   async getDataSubmissionDeadline() {
@@ -127,6 +127,15 @@ class SettingService {
 
     await SettingModel.deleteByKey(EXPIRY_APPLIED_KEY);
     appliedForDeadline = null;
+
+    // Al no haber plazo, no tiene sentido que alguien siga deshabilitado
+    // por haberlo vencido. Nota: esto rehabilita a TODOS los patrocinados
+    // deshabilitados, incluido cualquiera que el admin hubiera
+    // deshabilitado manualmente por otro motivo — es el comportamiento
+    // pedido explícitamente para este botón.
+    const reactivated = await UserModel.reactivateAllBeneficiaries();
+
+    console.log(`✅ Fecha límite eliminada: ${reactivated.length} patrocinado(s) reactivado(s)`);
     
     return { message: 'Fecha límite eliminada' };
   }

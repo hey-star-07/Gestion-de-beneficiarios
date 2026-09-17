@@ -13,6 +13,10 @@ export const authService = {
     return api.post('/auth/verify-email', data)
   },
   
+  resendVerification: (email) => {
+    return api.post('/auth/resend-verification', { email })
+  },
+  
   getProfile: () => {
     return api.get('/auth/profile')
   },

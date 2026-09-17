@@ -25,17 +25,18 @@ class AuthModel {
       role, 
       verificationCode, 
       verificationCodeExpires, 
-      beneficiaryId 
+      beneficiaryId,
+      isActive = true
     } = userData;
     
     const result = await db.query(
       `INSERT INTO users (
         email, username, password_hash, role, 
-        verification_code, verification_code_expires, beneficiary_id
+        verification_code, verification_code_expires, beneficiary_id, is_active
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
-      RETURNING id, email, username, role, beneficiary_id, is_verified, created_at`,
-      [email, username, passwordHash, role, verificationCode, verificationCodeExpires, beneficiaryId]
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      RETURNING id, email, username, role, beneficiary_id, is_verified, is_active, created_at`,
+      [email, username, passwordHash, role, verificationCode, verificationCodeExpires, beneficiaryId, isActive]
     );
     
     return result.rows[0];

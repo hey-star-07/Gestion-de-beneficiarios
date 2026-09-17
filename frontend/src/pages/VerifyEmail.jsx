@@ -18,6 +18,8 @@ const VerifyEmail = () => {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [verified, setVerified] = useState(false)
+  const [resending, setResending] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -33,6 +35,16 @@ const VerifyEmail = () => {
       }
     }
   }, [location])
+
+  // Cuenta regresiva del botón de reenvío, para no dejar mandar
+  // solicitudes en cadena (el backend igual las limita, esto es solo UX)
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setInterval(() => {
+      setResendCooldown(prev => (prev <= 1 ? 0 : prev - 1))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -64,8 +76,21 @@ const VerifyEmail = () => {
   }
 
   const handleResendCode = async () => {
-    // Aquí podrías implementar el reenvío de código
-    toast.success('Código reenviado (funcionalidad en desarrollo)')
+    if (!email) {
+      toast.error('Ingresa tu email para reenviar el código')
+      return
+    }
+
+    setResending(true)
+    try {
+      const response = await authService.resendVerification(email)
+      toast.success(response.data?.message || 'Código reenviado. Revisa tu email')
+      setResendCooldown(60)
+    } catch (error) {
+      toast.error(error.response?.data?.error || 'Error al reenviar el código')
+    } finally {
+      setResending(false)
+    }
   }
 
   return (
@@ -146,9 +171,12 @@ const VerifyEmail = () => {
                 fullWidth
                 variant="text"
                 onClick={handleResendCode}
+                disabled={resending || resendCooldown > 0}
                 sx={{ mb: 1 }}
               >
-                Reenviar código
+                {resendCooldown > 0
+                  ? `Reenviar código (${resendCooldown}s)`
+                  : (resending ? 'Reenviando...' : 'Reenviar código')}
               </Button>
 
               <Button

@@ -15,6 +15,16 @@ const loginLimiter = rateLimit({
   }
 });
 
+// Rate limiting para reenvío de código de verificación
+const resendLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: {
+    success: false,
+    error: 'Demasiadas solicitudes de reenvío. Por favor intenta de nuevo en 15 minutos'
+  }
+});
+
 // Validaciones
 const registerValidation = [
   body('email').isEmail().withMessage('Email inválido'),
@@ -32,6 +42,7 @@ const loginValidation = [
 // Rutas de autenticación
 router.post('/register', registerValidation, authController.register);
 router.post('/verify-email', authController.verifyEmail);
+router.post('/resend-verification', resendLimiter, authController.resendVerificationCode);
 router.post('/login', loginLimiter, loginValidation, authController.login);
 router.post('/forgot-password', authController.forgotPassword);
 router.post('/reset-password', authController.resetPassword);

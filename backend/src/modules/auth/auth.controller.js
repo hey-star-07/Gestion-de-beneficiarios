@@ -55,6 +55,32 @@ class AuthController {
     }
   }
 
+  async resendVerificationCode(req, res) {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email requerido'
+        });
+      }
+
+      const result = await authService.resendVerificationCode(email);
+
+      res.json({
+        success: true,
+        message: result.message
+      });
+    } catch (error) {
+      console.error('Error al reenviar código:', error.message);
+      res.status(400).json({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+
   async login(req, res) {
     try {
       const errors = validationResult(req);
