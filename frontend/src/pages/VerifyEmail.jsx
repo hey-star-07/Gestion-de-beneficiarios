@@ -100,8 +100,7 @@ const VerifyEmail = () => {
             <Typography variant="body1" color="text.secondary">
               {verified 
                 ? 'Tu email ha sido verificado exitosamente. Redirigiendo...' 
-                : `Ingresa el código de verificación enviado a ${email || 'tu email'}`
-              }
+                : `Ingresa el código de verificación enviado a ${email || 'tu email'}. Si no lo recibiste, revisa tu carpeta de spam.`}
             </Typography>
           </Box>
 
@@ -166,5 +165,4 @@ const VerifyEmail = () => {
     </Box>
   )
 }
-
 export default VerifyEmail

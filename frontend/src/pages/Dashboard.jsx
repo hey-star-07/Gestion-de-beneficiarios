@@ -15,7 +15,9 @@ import {
   InputAdornment,
   CircularProgress,
   IconButton,
-  Tooltip
+  Tooltip,
+  useMediaQuery,
+  useTheme
 } from '@mui/material'
 import {
   Logout,
@@ -32,15 +34,17 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const theme = useTheme()
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
   useEffect(() => {
     console.log('Dashboard - Usuario:', user)
-    
+
     if (user?.role === 'USER') {
       navigate('/profile', { replace: true })
       return
     }
-    
+
     if (user?.role === 'ADMIN') {
       loadBeneficiaries()
     } else {
@@ -50,12 +54,12 @@ const Dashboard = () => {
 
   const loadBeneficiaries = async () => {
     try {
-      console.log('Cargando beneficiarios...')
+      console.log('Cargando Patrocinados...')
       const response = await beneficiaryService.getAll()
       console.log('Respuesta completa:', response)
-      
+
       let beneficiariesList = []
-      
+
       if (Array.isArray(response.data)) {
         beneficiariesList = response.data
       } else if (response.data?.data && Array.isArray(response.data.data)) {
@@ -66,14 +70,14 @@ const Dashboard = () => {
         console.warn('Formato de respuesta no reconocido:', response.data)
         beneficiariesList = []
       }
-      
-      console.log('Beneficiarios procesados:', beneficiariesList)
-      
+
+      console.log('Patrocinados procesados:', beneficiariesList)
+
       setBeneficiaries(beneficiariesList)
       setFilteredBeneficiaries(beneficiariesList)
     } catch (error) {
-      console.error('Error al cargar beneficiarios:', error)
-      toast.error('Error al cargar beneficiarios')
+      console.error('Error al cargar Patrocinados:', error)
+      toast.error('Error al cargar Patrocinados')
       setBeneficiaries([])
       setFilteredBeneficiaries([])
     } finally {
@@ -93,8 +97,8 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (searchTerm && Array.isArray(beneficiaries)) {
-      // Se busca palabra por palabra: así "esther carvajal" encuentra a
-      // "Esther Mayerly Carvajal Quispe" aunque se omita el segundo nombre.
+      // Se busca palabra por palabra: así "esther flores" encuentra a
+      // "Esther Analuz Flores Perez" aunque se omita el segundo nombre.
       const words = normalize(searchTerm).split(/\s+/).filter(Boolean)
 
       const filtered = beneficiaries.filter(b => {
@@ -120,51 +124,55 @@ const Dashboard = () => {
     navigate('/admin/settings')
   }
 
-  console.log('Estado actual:', { 
-    loading, 
+  console.log('Estado actual:', {
+    loading,
     beneficiariesCount: beneficiaries.length,
-    filteredCount: filteredBeneficiaries.length 
+    filteredCount: filteredBeneficiaries.length
   })
 
   return (
-    <Box sx={{ 
-      minHeight: '100vh', 
+    <Box sx={{
+      minHeight: '100vh',
       bgcolor: '#f5f0e8',
       display: 'flex',
       flexDirection: 'column'
     }}>
       {/* Header */}
-      <AppBar 
-        position="static" 
-        sx={{ 
-          bgcolor: '#1a237e', 
+      <AppBar
+        position="static"
+        sx={{
+          bgcolor: '#1a237e',
           borderBottom: '3px solid #1a1a1a',
           boxShadow: 'none'
         }}
       >
-        <Toolbar>
-          <Home sx={{ fontSize: 30, color: 'white', mr: 2 }} />
-          
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              flexGrow: 1, 
-              fontFamily: 'Playfair Display', 
+        <Toolbar sx={{ px: { xs: 1.5, sm: 2 }, gap: { xs: 0.5, sm: 1 } }}>
+          <Home sx={{ fontSize: { xs: 24, sm: 30 }, color: 'white', mr: { xs: 1, sm: 2 } }} />
+
+          <Typography
+            variant="h6"
+            noWrap
+            sx={{
+              flexGrow: 1,
+              fontFamily: 'Playfair Display',
               fontWeight: 700,
-              color: 'white'
+              color: 'white',
+              fontSize: { xs: '0.95rem', sm: '1.25rem' },
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
             }}
           >
-            Gestión de Beneficiarios
+            {isMobile ? 'Patrocinados' : 'Gestión de Patrocinados'}
           </Typography>
-          
+
           {/* Botón de Configuración (solo admin) */}
           {user?.role === 'ADMIN' && (
             <Tooltip title="Configuración">
               <IconButton
                 color="inherit"
                 onClick={handleSettings}
-                sx={{ 
-                  mr: 2,
+                sx={{
+                  mr: { xs: 0.5, sm: 2 },
                   '&:hover': {
                     bgcolor: 'rgba(255,255,255,0.1)'
                   }
@@ -174,55 +182,76 @@ const Dashboard = () => {
               </IconButton>
             </Tooltip>
           )}
-          
+
           <Avatar
             sx={{
-              width: 40,
-              height: 40,
+              width: { xs: 34, sm: 40 },
+              height: { xs: 34, sm: 40 },
               bgcolor: '#ff6b00',
               border: '2px solid white',
-              mr: 2,
+              mr: { xs: 1, sm: 2 },
               fontFamily: 'Playfair Display'
             }}
           >
             {user?.username?.[0]?.toUpperCase() || 'A'}
           </Avatar>
-          
-          <Button
-            variant="outlined"
-            onClick={handleLogout}
-            sx={{
-              color: 'white',
-              borderColor: 'white',
-              '&:hover': {
-                borderColor: '#ff6b00',
-                color: '#ff6b00',
-                bgcolor: 'rgba(255,107,0,0.1)'
-              }
-            }}
-          >
-            <Logout sx={{ mr: 1 }} />
-            Salir
-          </Button>
+
+          {isMobile ? (
+            <Tooltip title="Salir">
+              <IconButton
+                onClick={handleLogout}
+                sx={{
+                  color: 'white',
+                  border: '1px solid white',
+                  '&:hover': {
+                    borderColor: '#ff6b00',
+                    color: '#ff6b00',
+                    bgcolor: 'rgba(255,107,0,0.1)'
+                  }
+                }}
+              >
+                <Logout fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="outlined"
+              onClick={handleLogout}
+              sx={{
+                color: 'white',
+                borderColor: 'white',
+                whiteSpace: 'nowrap',
+                '&:hover': {
+                  borderColor: '#ff6b00',
+                  color: '#ff6b00',
+                  bgcolor: 'rgba(255,107,0,0.1)'
+                }
+              }}
+            >
+              <Logout sx={{ mr: 1 }} />
+              Salir
+            </Button>
+          )}
         </Toolbar>
       </AppBar>
 
       {/* Contenido */}
-      <Container maxWidth="xl" sx={{ mt: 4, mb: 4, flex: 1 }}>
-        <Box sx={{ mb: 4, textAlign: 'center' }}>
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              fontWeight: 700, 
+      <Container maxWidth="xl" sx={{ mt: { xs: 2, sm: 4 }, mb: { xs: 2, sm: 4 }, px: { xs: 1.5, sm: 3 }, flex: 1 }}>
+        <Box sx={{ mb: { xs: 3, sm: 4 }, textAlign: 'center' }}>
+          <Typography
+            variant="h3"
+            sx={{
+              fontWeight: 700,
               color: '#1a237e',
               fontFamily: 'Playfair Display',
-              mb: 1
+              mb: 1,
+              fontSize: { xs: '1.75rem', sm: '3rem' }
             }}
           >
-            Beneficiarios
+            Patronicinados
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            {filteredBeneficiaries.length} beneficiarios registrados
+            {filteredBeneficiaries.length} Patronicinados registrados
           </Typography>
         </Box>
 
@@ -232,8 +261,8 @@ const Dashboard = () => {
           placeholder="Buscar por código o nombre..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          sx={{ 
-            mb: 4,
+          sx={{
+            mb: { xs: 3, sm: 4 },
             maxWidth: 500,
             mx: 'auto',
             display: 'block',
@@ -257,7 +286,7 @@ const Dashboard = () => {
           <Box sx={{ textAlign: 'center', py: 8 }}>
             <CircularProgress sx={{ color: '#1a237e', mb: 2 }} />
             <Typography variant="h6" sx={{ fontFamily: 'Playfair Display' }}>
-              Cargando beneficiarios...
+              Cargando Patrocinados...
             </Typography>
           </Box>
         ) : (

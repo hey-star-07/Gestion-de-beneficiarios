@@ -206,27 +206,6 @@ const StudyForm = ({ profile, onUpdate }) => {
           </Box>
         )}
       </DialogContent>
-      <DialogActions sx={{ p: 2 }}>
-        <Button
-          href={previewDialog.src}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{ color: '#1a237e' }}
-        >
-          Abrir en pestaña nueva
-        </Button>
-        <Button
-          variant="contained"
-          onClick={closePreview}
-          sx={{
-            bgcolor: '#1a237e',
-            border: '2px solid #1a1a1a',
-            '&:hover': { bgcolor: '#0d1442' }
-          }}
-        >
-          Cerrar
-        </Button>
-      </DialogActions>
     </Dialog>
   )
 

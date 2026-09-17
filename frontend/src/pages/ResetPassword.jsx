@@ -159,7 +159,8 @@ const ResetPassword = () => {
             <Box sx={{ textAlign: 'center', mb: 3 }}>
               <Verified sx={{ fontSize: 60, color: '#1a237e', mb: 1 }} />
               <Typography variant="body2" color="text.secondary">
-                Enviamos un código a <strong>{formData.email}</strong>
+                Enviamos un código a <strong>{formData.email}</strong>. 
+                Si no lo recibiste, revisa tu <strong>carpeta de spam</strong>.
               </Typography>
             </Box>
             <TextField

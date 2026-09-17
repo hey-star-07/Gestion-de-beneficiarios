@@ -205,7 +205,7 @@ const AdminSettings = () => {
                   borderRadius: 2
                 }}
               >
-                No hay fecha límite establecida. Los beneficiarios pueden editar sin restricciones.
+                No hay fecha límite establecida. Los patrocinados pueden editar sin restricciones.
               </Alert>
             )}
           </Paper>
@@ -232,8 +232,7 @@ const AdminSettings = () => {
             </Typography>
 
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              Establece la fecha hasta la cual los beneficiarios podrán modificar sus datos.
-              Después de esta fecha, los botones de actualizar, agregar, editar y eliminar se bloquearán automáticamente.
+              Establece la fecha hasta la cual los patrocinados podrán modificar sus datos.
             </Typography>
 
             <TextField
@@ -311,7 +310,7 @@ const AdminSettings = () => {
         open={confirmRemoveOpen}
         severity="delete"
         title="¿Eliminar fecha límite?"
-        message="Los beneficiarios podrán editar sus datos sin restricciones de fecha. Esta acción no se puede deshacer."
+        message="Los patrocinados podrán editar sus datos sin restricciones de fecha."
         confirmLabel="Eliminar"
         loading={loading}
         onConfirm={confirmRemove}

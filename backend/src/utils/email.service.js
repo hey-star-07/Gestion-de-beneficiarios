@@ -17,7 +17,7 @@ class EmailService {
 
   async sendVerificationEmail(email, code) {
     const mailOptions = {
-      from: `"Gestión de Beneficiarios" <${authConfig.email.from}>`,
+      from: `"Gestión de Patrocinados" <${authConfig.email.from}>`,
       to: email,
       subject: 'Verifica tu cuenta',
       html: `
@@ -60,7 +60,7 @@ class EmailService {
             <div style="text-align: center; margin-top: 40px;">
               <p style="color: #999999; font-size: 12px; line-height: 1.6; margin: 0;">
                 Si no creaste esta cuenta, puedes ignorar este email.<br>
-                © 2024 Gestión de Beneficiarios. Todos los derechos reservados.
+                © 2024 Gestión de Patrocinados. Todos los derechos reservados.
               </p>
             </div>
           </div>
@@ -81,7 +81,7 @@ class EmailService {
 
   async sendPasswordResetEmail(email, code) {
     const mailOptions = {
-      from: `"Gestión de Beneficiarios" <${authConfig.email.from}>`,
+      from: `"Gestión de Patrocinados" <${authConfig.email.from}>`,
       to: email,
       subject: 'Restablecer contraseña',
       html: `
@@ -117,7 +117,6 @@ class EmailService {
               
               <p style="color: #666666; font-size: 14px; line-height: 1.6; margin: 20px 0 0 0;">
                 Este código expirará en <strong>15 minutos</strong>
-                Revisa tu <strong>carpeta de spam</strong> si no lo encuentras en tu bandeja de entrada.
               </p>
             </div>
 
@@ -125,7 +124,7 @@ class EmailService {
             <div style="text-align: center; margin-top: 40px;">
               <p style="color: #999999; font-size: 12px; line-height: 1.6; margin: 0;">
                 Si no solicitaste este cambio, puedes ignorar este email.<br>
-                © 2026 Gestión de Beneficiarios. Todos los derechos reservados.
+                © 2026 Gestión de Patrocinados. Todos los derechos reservados.
               </p>
             </div>
           </div>
