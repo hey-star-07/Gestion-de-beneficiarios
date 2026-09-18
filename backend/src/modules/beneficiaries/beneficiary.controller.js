@@ -1,5 +1,6 @@
 const beneficiaryService = require('./beneficiary.service');
 const { validationResult } = require('express-validator');
+const { uploadBufferToCloudinary } = require('../../config/cloudinary');
 
 class BeneficiaryController {
   async list(req, res) {
@@ -316,48 +317,43 @@ class BeneficiaryController {
 
   async uploadFile(req, res) {
     try {
-      console.log('📤 Subiendo archivo...');
-      console.log('Archivo:', req.file);
-      console.log('Usuario:', req.user);
-      
+      console.log('📤 Subiendo croquis a Cloudinary...');
+
       if (!req.file) {
         return res.status(400).json({
           success: false,
           error: 'No se proporcionó ningún archivo'
         });
       }
-      
+
       if (!req.user.beneficiaryId) {
         return res.status(404).json({
           success: false,
           error: 'No tienes un perfil de beneficiario asociado'
         });
       }
-      
-      // Determinar el tipo de archivo
-      let fileField = 'croquis_file';
-      if (req.file.fieldname === 'schedule_file') {
-        fileField = 'schedule_file';
-      } else if (req.file.fieldname === 'croquis_file') {
-        fileField = 'croquis_file';
-      }
-      
-      // Guardar la ruta del archivo en la base de datos
+
+      // req.file.buffer viene de multer con memoryStorage (ver
+      // config/upload.js) — el archivo nunca toca el disco del backend.
+      const result = await uploadBufferToCloudinary(
+        req.file.buffer,
+        'croquis',
+        req.file.originalname
+      );
+
+      // Ahora se guarda la URL completa de Cloudinary, no un nombre de
+      // archivo local. El frontend usa este valor directo como src.
       const db = require('../../config/database');
-      
-      if (fileField === 'croquis_file') {
-        await db.query(
-          'UPDATE beneficiaries SET croquis_file = $1 WHERE id = $2',
-          [req.file.filename, req.user.beneficiaryId]
-        );
-      }
-      
+      await db.query(
+        'UPDATE beneficiaries SET croquis_file = $1 WHERE id = $2',
+        [result.secure_url, req.user.beneficiaryId]
+      );
+
       res.json({
         success: true,
         message: 'Archivo subido exitosamente',
         data: {
-          filename: req.file.filename,
-          path: `/uploads/croquis/${req.file.filename}`,
+          url: result.secure_url,
           size: req.file.size,
           mimetype: req.file.mimetype
         }
@@ -373,30 +369,33 @@ class BeneficiaryController {
 
   async uploadScheduleFile(req, res) {
     try {
-      console.log('📤 Subiendo horario de estudio...');
-      console.log('Archivo:', req.file);
+      console.log('📤 Subiendo horario de estudio a Cloudinary...');
       console.log('ID de educación:', req.params.educationId);
-      
+
       if (!req.file) {
         return res.status(400).json({
           success: false,
           error: 'No se proporcionó ningún archivo'
         });
       }
-      
-      // Guardar la ruta del archivo en la base de datos
+
+      const result = await uploadBufferToCloudinary(
+        req.file.buffer,
+        'schedules',
+        req.file.originalname
+      );
+
       const db = require('../../config/database');
       await db.query(
         'UPDATE education_profiles SET schedule_file = $1 WHERE id = $2',
-        [req.file.filename, req.params.educationId]
+        [result.secure_url, req.params.educationId]
       );
-      
+
       res.json({
         success: true,
         message: 'Horario subido exitosamente',
         data: {
-          filename: req.file.filename,
-          path: `/uploads/schedules/${req.file.filename}`,
+          url: result.secure_url,
           size: req.file.size,
           mimetype: req.file.mimetype
         }

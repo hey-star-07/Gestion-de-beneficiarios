@@ -21,7 +21,7 @@ const logger = require('./utils/logger');
 
 const app = express();
 
-// Configurar trust proxy para producción
+// Configurar trust proxy para producción (Railway/Render corren detrás de un proxy)
 app.set('trust proxy', 1);
 
 // Middlewares de seguridad
@@ -30,9 +30,16 @@ app.use(helmet({
   contentSecurityPolicy: false
 }));
 
-const isProd = process.env.NODE_ENV === 'production';
+// Configuración CORS.
+// En producción solo se aceptan los orígenes listados en ALLOWED_ORIGINS
+// (tu dominio de Vercel). En desarrollo se mantiene abierto para no
+// complicar el flujo local.
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.use(cors({
-  origin: isProd ? authConfig.cors.origins : true,
+  origin: isProduction
+    ? authConfig.cors.origins
+    : true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
@@ -45,25 +52,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Morgan para logging
 app.use(morgan('dev'));
 
-// Servir archivos estáticos
-const { UPLOAD_ROOT } = require('./config/upload');
-
-// Helmet (arriba) agrega `X-Frame-Options: SAMEORIGIN` a TODAS las
-// respuestas por defecto, incluida esta carpeta estática. Eso bloquea
-// silenciosamente los PDFs cuando se muestran en un <iframe> desde el
-// frontend (otro origen: puerto 5173 vs 3000) — el navegador simplemente
-// no los renderiza, sin error visible. Las imágenes no se ven afectadas
-// porque ese header solo restringe <iframe>/<frame>/<object>, nunca <img>.
-//
-// Los archivos de /uploads (croquis, horarios) están pensados para
-// visualizarse embebidos dentro de la propia app, así que se les quita
-// el header antes de servirlos.
-app.use('/uploads', (req, res, next) => {
-  res.removeHeader('X-Frame-Options');
-  next();
-});
-app.use('/uploads', express.static(UPLOAD_ROOT));
-console.log('📁 Sirviendo archivos desde:', UPLOAD_ROOT);
+// NOTA: ya no se sirve una carpeta /uploads local. Los croquis y
+// horarios ahora se suben directo a Cloudinary (ver
+// src/config/cloudinary.js) y se guardan como URL completa en la BD,
+// así que el backend no necesita servir ni persistir ningún archivo.
+// Si migras código viejo que todavía usaba `/uploads/...`, ya no hace falta.
 
 // Rutas de la API
 app.use('/api/auth', authRoutes);
@@ -71,7 +64,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/beneficiaries', beneficiaryRoutes);
 app.use('/api/settings', settingRoutes);
 
-// Ruta de health check
+// Ruta de health check (útil para el healthcheck de Railway/Render)
 app.get('/health', (req, res) => {
   res.json({ 
     status: 'OK', 
@@ -136,8 +129,8 @@ const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   console.log('🚀 Servidor backend corriendo en puerto', PORT);
   console.log('📋 Ambiente:', process.env.NODE_ENV || 'development');
-  console.log('🔗 API disponible en:', `http://localhost:${PORT}/api`);
-  console.log('💡 Frontend debe estar en: http://localhost:5173');
+  console.log('☁️  Archivos servidos vía Cloudinary');
+  console.log('🌐 Orígenes permitidos:', isProduction ? authConfig.cors.origins.join(', ') : 'todos (desarrollo)');
 });
 
 // Manejo de errores no capturados

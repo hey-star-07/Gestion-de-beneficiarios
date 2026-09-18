@@ -12,7 +12,14 @@ class AuthController {
         });
       }
 
-      const result = await authService.register(req.body);
+      // Antes se pasaba req.body completo tal cual. Como authService.register
+      // desestructura "role" con default 'USER', cualquiera podía mandar
+      // {"role":"ADMIN", ...} en el POST y crear una cuenta admin sin
+      // autenticarse — es una escalada de privilegios. Ahora solo se toman
+      // los campos que el registro público debe poder enviar; "role" nunca
+      // llega desde el cliente, así que siempre cae en el default 'USER'.
+      const { email, code, firstName, lastName, password } = req.body;
+      const result = await authService.register({ email, code, firstName, lastName, password });
       
       res.status(201).json({
         success: true,

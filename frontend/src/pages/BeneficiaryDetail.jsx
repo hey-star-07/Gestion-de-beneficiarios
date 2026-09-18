@@ -63,8 +63,6 @@ const BeneficiaryDetail = () => {
   const theme = useTheme()
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
 
-  const UPLOADS_BASE = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:3000/uploads'
-
   useEffect(() => {
     console.log('📋 BeneficiaryDetail montado con código:', code)
 
@@ -193,7 +191,8 @@ const BeneficiaryDetail = () => {
     setPreviewDialog({
       open: true,
       type: beneficiary.croquis_file.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
-      src: `${UPLOADS_BASE}/croquis/${beneficiary.croquis_file}`,
+      // croquis_file ya es la URL completa de Cloudinary.
+      src: beneficiary.croquis_file,
       name: 'Croquis de Domicilio'
     })
   }
@@ -204,7 +203,8 @@ const BeneficiaryDetail = () => {
     setPreviewDialog({
       open: true,
       type: education.schedule_file.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',
-      src: `${UPLOADS_BASE}/schedules/${education.schedule_file}`,
+      // schedule_file ya es la URL completa de Cloudinary.
+      src: education.schedule_file,
       name: `Horario — ${education.career_name || 'Estudio'}`
     })
   }
@@ -590,7 +590,7 @@ const BeneficiaryDetail = () => {
                       ) : (
                         <Box
                           component="img"
-                          src={`${UPLOADS_BASE}/croquis/${beneficiary.croquis_file}`}
+                          src={beneficiary.croquis_file}
                           alt="Croquis"
                           sx={{
                             maxWidth: { xs: 180, sm: 250 },
