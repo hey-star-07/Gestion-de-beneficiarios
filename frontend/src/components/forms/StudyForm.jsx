@@ -60,7 +60,7 @@ const StudyForm = ({ profile, onUpdate }) => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [educationToDelete, setEducationToDelete] = useState(null)
 
-  const UPLOADS_URL = 'http://localhost:3000'
+  const UPLOADS_BASE = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:3000/uploads'
 
   // Única fuente de verdad para la lista: el perfil que baja del padre
   // (Profile.jsx) vía props, refrescado con onUpdate(). NO se vuelve a
@@ -124,7 +124,7 @@ const StudyForm = ({ profile, onUpdate }) => {
   // Abre el horario YA GUARDADO en el servidor dentro del modal.
   const handleViewSavedSchedule = (education) => {
     if (!education?.schedule_file) return
-    const fileUrl = `${UPLOADS_URL}/uploads/schedules/${education.schedule_file}`
+    const fileUrl = `${UPLOADS_BASE}/schedules/${education.schedule_file}`
     setPreviewDialog({
       open: true,
       type: education.schedule_file.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',

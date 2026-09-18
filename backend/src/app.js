@@ -30,9 +30,9 @@ app.use(helmet({
   contentSecurityPolicy: false
 }));
 
-// Configuración CORS - PERMITIR TODO EN DESARROLLO
+const isProd = process.env.NODE_ENV === 'production';
 app.use(cors({
-  origin: true, // Permitir cualquier origen en desarrollo
+  origin: isProd ? authConfig.cors.origins : true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept']

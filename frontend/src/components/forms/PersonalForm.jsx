@@ -50,7 +50,7 @@ const PersonalForm = ({ profile, onUpdate }) => {
   // Visor interno: { open, type: 'image' | 'pdf', src, name }
   const [previewDialog, setPreviewDialog] = useState({ open: false })
 
-  const UPLOADS_URL = 'http://localhost:3000'
+  const UPLOADS_BASE = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:3000/uploads'
 
   useEffect(() => {
     if (profile) {
@@ -161,7 +161,7 @@ const PersonalForm = ({ profile, onUpdate }) => {
   // Abre el croquis YA GUARDADO en el servidor dentro del modal.
   const handleViewCroquis = () => {
     if (!profile?.croquis_file) return
-    const fileUrl = `${UPLOADS_URL}/uploads/croquis/${profile.croquis_file}`
+    const fileUrl = `${UPLOADS_BASE}/croquis/${profile.croquis_file}`
     setPreviewDialog({
       open: true,
       type: profile.croquis_file.toLowerCase().endsWith('.pdf') ? 'pdf' : 'image',

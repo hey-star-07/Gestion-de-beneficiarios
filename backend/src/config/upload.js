@@ -3,8 +3,10 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
-// Ruta de uploads fuera del backend
-const UPLOAD_ROOT = path.join(__dirname, '../../../uploads');
+// Ruta de uploads fuera del backend (UPLOAD_PATH en producción, ej. Render disk)
+const UPLOAD_ROOT = process.env.UPLOAD_PATH
+  ? path.resolve(process.env.UPLOAD_PATH)
+  : path.join(__dirname, '../../../uploads');
 
 // Crear directorios si no existen
 const uploadDirs = [
