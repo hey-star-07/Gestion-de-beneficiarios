@@ -23,7 +23,14 @@ const connectionConfig = process.env.DATABASE_URL
 
 const pool = new Pool({
   ...connectionConfig,
-  max: 20,
+  // En Vercel cada invocación puede levantar su propia instancia de la
+  // función (y por lo tanto su propio pool). Con max:20 por instancia,
+  // varias invocaciones concurrentes agotan rápido el límite de
+  // conexiones del plan free de Neon. max:1 + la cadena "pooler" de
+  // Neon (PgBouncer) es la combinación recomendada para serverless.
+  // En Render (servidor persistente, una sola instancia) 20 sigue
+  // siendo lo correcto.
+  max: process.env.VERCEL ? 1 : 20,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000,
 });

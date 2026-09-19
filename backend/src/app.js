@@ -126,12 +126,21 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-const server = app.listen(PORT, () => {
-  console.log('🚀 Servidor backend corriendo en puerto', PORT);
-  console.log('📋 Ambiente:', process.env.NODE_ENV || 'development');
-  console.log('☁️  Archivos servidos vía Cloudinary');
-  console.log('🌐 Orígenes permitidos:', isProduction ? authConfig.cors.origins.join(', ') : 'todos (desarrollo)');
-});
+// En Vercel el archivo no corre como servidor persistente: cada
+// petición invoca la función exportada al final de este archivo
+// (ver backend/api/index.js). Si acá llamamos a app.listen(), Vercel
+// igual la ejecuta en cada cold start sin ningún beneficio (nadie se
+// conecta a ese puerto) — process.env.VERCEL lo pone Vercel solo en
+// automático, así que con este guard el mismo app.js sirve para
+// Render (necesita listen) y para Vercel (no lo necesita).
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log('🚀 Servidor backend corriendo en puerto', PORT);
+    console.log('📋 Ambiente:', process.env.NODE_ENV || 'development');
+    console.log('☁️  Archivos servidos vía Cloudinary');
+    console.log('🌐 Orígenes permitidos:', isProduction ? authConfig.cors.origins.join(', ') : 'todos (desarrollo)');
+  });
+}
 
 // Manejo de errores no capturados
 process.on('unhandledRejection', (err) => {
