@@ -12,6 +12,9 @@
   "keywords": ["beneficiarios", "gestion", "api", "oauth"],
   "author": "Tu Nombre",
   "license": "ISC",
+  "engines": {
+    "node": "20.x"
+  },
   "dependencies": {
     "cloudinary": "^1.41.3",
     "express": "^4.18.2",
