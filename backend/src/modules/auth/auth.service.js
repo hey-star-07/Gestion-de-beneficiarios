@@ -74,8 +74,16 @@ class AuthService {
       isActive
     });
     
-    // Enviar email de verificación
-    emailService.sendVerificationEmail(email, verificationCode).catch(err => {
+    // Enviar email de verificación.
+    // Antes esto no se esperaba ("fire and forget"): en un servidor
+    // tradicional (Render, local) igual terminaba de enviarse porque el
+    // proceso sigue vivo después de responder. En Vercel la función se
+    // congela/termina apenas se manda la respuesta HTTP, así que el
+    // envío quedaba cortado a la mitad antes de completar el handshake
+    // SMTP — el código se guardaba en la BD (eso sí se esperaba antes)
+    // pero el correo nunca llegaba a salir. Ahora se espera el intento
+    // (con catch, para no tumbar el registro si el email falla).
+    await emailService.sendVerificationEmail(email, verificationCode).catch(err => {
       console.error('Error enviando email:', err);
     });
     
