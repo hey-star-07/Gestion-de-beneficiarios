@@ -1,15 +1,23 @@
 const fs = require('fs');
 const path = require('path');
 
-// Crear directorio de logs si no existe
+// En Vercel el filesystem es de solo lectura (salvo /tmp) — intentar
+// crear/escribir carpetas ahí tira la función entera con un ENOENT
+// antes de que corra cualquier otra cosa (es justo lo que estaba
+// pasando: hasta /health devolvía 500 por esto). process.env.VERCEL lo
+// pone la plataforma sola, así que con ese flag esta clase cae a
+// solo-consola ahí, y sigue escribiendo a disco normal en Render/local,
+// donde sí hay un filesystem persistente.
+const isServerless = Boolean(process.env.VERCEL);
+
 const logDir = path.join(__dirname, '../../logs');
-if (!fs.existsSync(logDir)) {
+if (!isServerless && !fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
 }
 
 class Logger {
   constructor() {
-    this.logFile = path.join(logDir, `${new Date().toISOString().split('T')[0]}.log`);
+    this.logFile = isServerless ? null : path.join(logDir, `${new Date().toISOString().split('T')[0]}.log`);
     this.isProduction = process.env.NODE_ENV === 'production';
   }
 
@@ -32,18 +40,18 @@ class Logger {
   }
 
   info(message, data = null) {
+    // Antes esto se suprimía en producción (solo escribía al archivo).
+    // Como el archivo no se ve en ningún dashboard de Render/Vercel,
+    // en producción esto no producía NINGÚN rastro visible. Ahora
+    // siempre sale por consola, que es lo que ambas plataformas capturan.
     const logMessage = this.formatMessage('INFO', message, data);
-    if (!this.isProduction) {
-      console.log(logMessage);
-    }
+    console.log(logMessage);
     this.writeToFile(logMessage);
   }
 
   warn(message, data = null) {
     const logMessage = this.formatMessage('WARN', message, data);
-    if (!this.isProduction) {
-      console.warn(logMessage);
-    }
+    console.warn(logMessage);
     this.writeToFile(logMessage);
   }
 
@@ -62,6 +70,11 @@ class Logger {
   }
 
   writeToFile(message) {
+    // En Vercel no hay archivo al que escribir — los console.log ya
+    // quedan capturados en el dashboard de Logs de Vercel, que cumple
+    // el mismo propósito.
+    if (isServerless) return;
+
     try {
       fs.appendFileSync(this.logFile, message + '\n');
     } catch (err) {
