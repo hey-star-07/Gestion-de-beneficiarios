@@ -153,7 +153,21 @@ class BeneficiaryModel {
   }
 
   async delete(id) {
-    await db.query('DELETE FROM beneficiaries WHERE id = $1', [id]);
+    const client = await db.getClient();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM education_profiles WHERE beneficiary_id = $1', [id]);
+      await client.query('DELETE FROM family_members WHERE beneficiary_id = $1', [id]);
+      await client.query('DELETE FROM users WHERE beneficiary_id = $1', [id]);
+      await client.query('DELETE FROM beneficiaries WHERE id = $1', [id]);
+      await client.query('COMMIT');
+      log('🗑️ Beneficiario eliminado (ID):', id);
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
   }
 
   async addEducationProfile(educationData) {

@@ -4,15 +4,17 @@ import {
   Card,
   CardContent,
   Typography,
-  Box
+  Box,
+  IconButton
 } from '@mui/material'
 import {
   Folder,
-  FolderOpen
+  FolderOpen,
+  Delete
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 
-const FolderCard = ({ beneficiary }) => {
+const FolderCard = ({ beneficiary, onDelete }) => {
   const [isHovered, setIsHovered] = useState(false)
   const navigate = useNavigate()
 
@@ -40,6 +42,7 @@ const FolderCard = ({ beneficiary }) => {
           boxShadow: '4px 4px 0px rgba(26,26,26,0.2)',
           bgcolor: '#fffdf9',
           transition: 'all 0.2s ease',
+          position: 'relative',
           '&:hover': {
             transform: 'translateY(-4px)',
             boxShadow: '6px 6px 0px rgba(26,26,26,0.15)'
@@ -47,6 +50,32 @@ const FolderCard = ({ beneficiary }) => {
         }}
         onClick={handleClick}
       >
+        {onDelete && (
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete(beneficiary?.code)
+            }}
+            sx={{
+              position: 'absolute',
+              top: 6,
+              right: 6,
+              color: '#d32f2f',
+              bgcolor: 'rgba(255,255,255,0.9)',
+              border: '1.5px solid #1a1a1a',
+              p: 0.5,
+              zIndex: 2,
+              '&:hover': {
+                bgcolor: '#d32f2f',
+                color: 'white'
+              }
+            }}
+            title={`Eliminar patrocinado ${beneficiary?.code || ''}`}
+          >
+            <Delete sx={{ fontSize: 16 }} />
+          </IconButton>
+        )}
         <CardContent
           sx={{
             p: 1.5,

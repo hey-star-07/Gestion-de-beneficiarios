@@ -23,15 +23,19 @@ import {
   Logout,
   Search,
   Home,
-  Settings
+  Settings,
+  Delete
 } from '@mui/icons-material'
 import FolderGrid from '../components/folders/FolderGrid'
+import DeleteBeneficiaryModal from '../components/common/DeleteBeneficiaryModal'
 
 const Dashboard = () => {
   const [beneficiaries, setBeneficiaries] = useState([])
   const [filteredBeneficiaries, setFilteredBeneficiaries] = useState([])
   const [searchTerm, setSearchTerm] = useState('')
   const [loading, setLoading] = useState(true)
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteTargetCode, setDeleteTargetCode] = useState('')
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const theme = useTheme()
@@ -248,39 +252,80 @@ const Dashboard = () => {
               fontSize: { xs: '1.75rem', sm: '3rem' }
             }}
           >
-            Patronicinados
+            Patrocinados
           </Typography>
           <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            {filteredBeneficiaries.length} Patronicinados registrados
+            {filteredBeneficiaries.length} Patrocinados registrados
           </Typography>
         </Box>
 
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Buscar por código o nombre..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+        <Box
           sx={{
+            display: 'flex',
+            flexDirection: { xs: 'column', sm: 'row' },
+            justifyContent: 'center',
+            alignItems: 'stretch',
+            gap: 2,
             mb: { xs: 3, sm: 4 },
-            maxWidth: 500,
-            mx: 'auto',
-            display: 'block',
-            '& .MuiOutlinedInput-root': {
-              bgcolor: '#fffdf9',
-              border: '2px solid #1a1a1a',
-              borderRadius: 4,
-              boxShadow: '3px 3px 0px rgba(26,26,26,0.15)'
-            }
+            maxWidth: 720,
+            mx: 'auto'
           }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search sx={{ color: '#1a237e' }} />
-              </InputAdornment>
-            ),
-          }}
-        />
+        >
+          <TextField
+            fullWidth
+            variant="outlined"
+            placeholder="Buscar por código o nombre..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            sx={{
+              flex: 1,
+              '& .MuiOutlinedInput-root': {
+                bgcolor: '#fffdf9',
+                border: '2px solid #1a1a1a',
+                borderRadius: 3,
+                boxShadow: '3px 3px 0px rgba(26,26,26,0.15)'
+              }
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Search sx={{ color: '#1a237e' }} />
+                </InputAdornment>
+              ),
+            }}
+          />
+
+          {user?.role === 'ADMIN' && (
+            <Button
+              variant="contained"
+              startIcon={<Delete />}
+              onClick={() => {
+                setDeleteTargetCode('')
+                setDeleteModalOpen(true)
+              }}
+              sx={{
+                bgcolor: '#d32f2f',
+                color: 'white',
+                border: '2px solid #1a1a1a',
+                borderRadius: 3,
+                boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
+                px: 2.5,
+                py: { xs: 1.5, sm: 'auto' },
+                whiteSpace: 'nowrap',
+                fontFamily: 'Playfair Display',
+                fontWeight: 700,
+                fontSize: { xs: '0.9rem', sm: '0.95rem' },
+                '&:hover': {
+                  bgcolor: '#b71c1c',
+                  transform: 'translate(1px, 1px)',
+                  boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
+                }
+              }}
+            >
+              Eliminar por Código
+            </Button>
+          )}
+        </Box>
 
         {loading ? (
           <Box sx={{ textAlign: 'center', py: 8 }}>
@@ -290,9 +335,28 @@ const Dashboard = () => {
             </Typography>
           </Box>
         ) : (
-          <FolderGrid beneficiaries={filteredBeneficiaries} />
+          <FolderGrid
+            beneficiaries={filteredBeneficiaries}
+            onDelete={user?.role === 'ADMIN' ? (code) => {
+              setDeleteTargetCode(code)
+              setDeleteModalOpen(true)
+            } : undefined}
+          />
         )}
       </Container>
+
+      {/* Modal de eliminación de beneficiario */}
+      <DeleteBeneficiaryModal
+        open={deleteModalOpen}
+        initialCode={deleteTargetCode}
+        onClose={() => {
+          setDeleteModalOpen(false)
+          setDeleteTargetCode('')
+        }}
+        onSuccess={() => {
+          loadBeneficiaries()
+        }}
+      />
     </Box>
   )
 }

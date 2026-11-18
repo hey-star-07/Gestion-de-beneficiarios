@@ -133,11 +133,30 @@ class BeneficiaryController {
 
   async delete(req, res) {
     try {
-      await beneficiaryService.deleteBeneficiary(req.params.id);
+      const result = await beneficiaryService.deleteBeneficiary(req.params.id);
       
       res.json({
         success: true,
-        message: 'Beneficiario eliminado exitosamente'
+        message: 'Beneficiario eliminado exitosamente',
+        data: result
+      });
+    } catch (error) {
+      res.status(400).json({ 
+        success: false,
+        error: error.message 
+      });
+    }
+  }
+
+  async deleteByCode(req, res) {
+    try {
+      const { code } = req.params;
+      const result = await beneficiaryService.deleteBeneficiaryByCode(code);
+      
+      res.json({
+        success: true,
+        message: `Beneficiario ${code} eliminado exitosamente`,
+        data: result
       });
     } catch (error) {
       res.status(400).json({ 

@@ -60,7 +60,7 @@ class EmailService {
             <div style="text-align: center; margin-top: 40px;">
               <p style="color: #999999; font-size: 12px; line-height: 1.6; margin: 0;">
                 Si no creaste esta cuenta, puedes ignorar este email.<br>
-                © 2024 Gestión de Patrocinados. Todos los derechos reservados.
+                © 2026 Gestión de Patrocinados. Todos los derechos reservados.
               </p>
             </div>
           </div>

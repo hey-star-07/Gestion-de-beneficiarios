@@ -58,13 +58,33 @@ class BeneficiaryService {
   }
 
   async deleteBeneficiary(id) {
-    const beneficiary = await BeneficiaryModel.findById(id);
+    let beneficiary;
+    if (isNaN(id)) {
+      beneficiary = await BeneficiaryModel.findByCode(id);
+    } else {
+      beneficiary = await BeneficiaryModel.findById(id);
+    }
     
     if (!beneficiary) {
       throw new Error('Beneficiario no encontrado');
     }
     
-    await BeneficiaryModel.delete(id);
+    await BeneficiaryModel.delete(beneficiary.id);
+    return beneficiary;
+  }
+
+  async deleteBeneficiaryByCode(code) {
+    if (!code) {
+      throw new Error('Código de beneficiario no proporcionado');
+    }
+    const beneficiary = await BeneficiaryModel.findByCode(code.trim());
+    
+    if (!beneficiary) {
+      throw new Error(`Beneficiario con código "${code}" no encontrado`);
+    }
+    
+    await BeneficiaryModel.delete(beneficiary.id);
+    return beneficiary;
   }
 
   async addEducationProfile(beneficiaryId, educationData) {

@@ -66,6 +66,12 @@ export const beneficiaryService = {
   create: (data) => api.post('/beneficiaries', data),
   update: (id, data) => api.put(`/beneficiaries/${id}`, data),
   delete: (id) => api.delete(`/beneficiaries/${id}`),
+  deleteByCode: async (code) => {
+    console.log('🗑️ deleteByCode llamado con:', code)
+    const response = await api.delete(`/beneficiaries/code/${code}`)
+    console.log('📦 deleteByCode respuesta:', response)
+    return response.data
+  },
 
   // ============================================
   // MÉTODOS PARA EDUCACIÓN
