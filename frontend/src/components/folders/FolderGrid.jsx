@@ -2,7 +2,7 @@ import React from 'react'
 import { Box } from '@mui/material'
 import FolderCard from './FolderCard'
 
-const FolderGrid = ({ beneficiaries }) => {
+const FolderGrid = ({ beneficiaries, onDelete }) => {
   // Asegurarse de que beneficiaries sea un array
   const beneficiariesList = Array.isArray(beneficiaries) 
     ? beneficiaries 
@@ -40,6 +40,7 @@ const FolderGrid = ({ beneficiaries }) => {
       {beneficiariesList.map((beneficiary, index) => (
         <FolderCard 
           beneficiary={beneficiary} 
+          onDelete={onDelete}
           key={beneficiary?.id || index} 
         />
       ))}

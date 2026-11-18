@@ -40,7 +40,8 @@ import {
   FolderOpen,
   Description,
   Visibility,
-  Close
+  Close,
+  Delete
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import ConfirmDialog from '../components/common/ConfirmDialog'
@@ -54,6 +55,8 @@ const BeneficiaryDetail = () => {
   const [error, setError] = useState(null)
   const [statusLoading, setStatusLoading] = useState(false)
   const [confirmToggleOpen, setConfirmToggleOpen] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   // Visor interno de documentos: { open, type: 'image' | 'pdf', src, name }
   // Reemplaza los antiguos href target="_blank" — así el admin ve el
   // croquis y los horarios en una pantallita dentro de la app, igual
@@ -182,6 +185,28 @@ const BeneficiaryDetail = () => {
     } finally {
       setStatusLoading(false)
       setConfirmToggleOpen(false)
+    }
+  }
+
+  const handleDeleteClick = () => {
+    if (!beneficiary) return
+    setConfirmDeleteOpen(true)
+  }
+
+  const confirmDeleteBeneficiary = async () => {
+    if (!beneficiary?.code) return
+
+    setDeleteLoading(true)
+    try {
+      await beneficiaryService.deleteByCode(beneficiary.code)
+      toast.success(`Patrocinado ${beneficiary.code} (${beneficiary.first_name} ${beneficiary.last_name}) eliminado exitosamente`)
+      navigate('/', { replace: true })
+    } catch (error) {
+      console.error('❌ Error al eliminar patrocinado:', error)
+      toast.error(error.response?.data?.error || 'Error al eliminar el patrocinado')
+    } finally {
+      setDeleteLoading(false)
+      setConfirmDeleteOpen(false)
     }
   }
 
@@ -486,6 +511,32 @@ const BeneficiaryDetail = () => {
                   }}
                 >
                   {beneficiary.is_active !== false ? 'Deshabilitar' : 'Habilitar'}
+                </Button>
+              </Grid>
+
+              {/* Botón de eliminar */}
+              <Grid item xs={12} sm="auto">
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<Delete />}
+                  onClick={handleDeleteClick}
+                  sx={{
+                    bgcolor: '#d32f2f',
+                    color: 'white',
+                    border: '2px solid #1a1a1a',
+                    boxShadow: '3px 3px 0px rgba(26,26,26,0.2)',
+                    whiteSpace: 'nowrap',
+                    fontFamily: 'Playfair Display',
+                    fontWeight: 700,
+                    '&:hover': {
+                      bgcolor: '#b71c1c',
+                      transform: 'translate(1px, 1px)',
+                      boxShadow: '2px 2px 0px rgba(26,26,26,0.2)'
+                    }
+                  }}
+                >
+                  Eliminar
                 </Button>
               </Grid>
             </Grid>
@@ -964,6 +1015,17 @@ const BeneficiaryDetail = () => {
         loading={statusLoading}
         onConfirm={confirmToggleStatus}
         onClose={() => setConfirmToggleOpen(false)}
+      />
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        severity="delete"
+        title="¿Eliminar Patrocinado?"
+        message={`¿Estás seguro de que deseas eliminar permanentemente al patrocinado ${beneficiary.first_name || ''} ${beneficiary.last_name || ''} (${beneficiary.code})? Se eliminarán todos sus datos personales, familiares, estudios y el usuario de acceso. Esta acción no se puede deshacer.`}
+        confirmLabel="Eliminar definitivamente"
+        loading={deleteLoading}
+        onConfirm={confirmDeleteBeneficiary}
+        onClose={() => setConfirmDeleteOpen(false)}
       />
 
       {previewModal}

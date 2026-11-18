@@ -66,6 +66,7 @@ router.post('/', roleMiddleware('ADMIN'), beneficiaryController.create);
 router.get('/:id', isOwnerOrAdmin, beneficiaryController.getById);
 router.get('/:id/complete', isOwnerOrAdmin, beneficiaryController.getCompleteProfile);
 router.put('/:id', isOwnerOrAdmin, beneficiaryController.update);
+router.delete('/code/:code', roleMiddleware('ADMIN'), beneficiaryController.deleteByCode);
 router.delete('/:id', roleMiddleware('ADMIN'), beneficiaryController.delete);
 // ============================================
 // RUTAS DE ADMIN PARA HABILITAR/DESHABILITAR
